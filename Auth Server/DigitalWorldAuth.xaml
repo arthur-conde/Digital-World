@@ -1,0 +1,13 @@
+﻿<Window x:Class="Digital_World.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Digital World Auth Server" Height="334" Width="821">
+    <Grid>
+        <Button Content="Start" Height="23" HorizontalAlignment="Right" Margin="0,0,93,12" Name="btnListen" VerticalAlignment="Bottom" Width="75" Click="btnStart_Click" />
+        <Button Content="Stop" Height="23" HorizontalAlignment="Right" Margin="0,0,12,12" Name="btnStop" VerticalAlignment="Bottom" Width="75" Click="btnStop_Click" />
+        <TextBox Margin="12,29,12,42" Name="tLog" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible" FontFamily="Lucida Console" IsReadOnly="True" />
+        <Menu Height="23" Margin="0,0,0,0" VerticalAlignment="Top">
+            <MenuItem Header="Options" Name="mi_opt" Click="mi_opt_Click" />
+        </Menu>
+    </Grid>
+</Window>

@@ -1,0 +1,62 @@
+#include <windows.h>
+#include <detours.h>
+#include <stdio.h>
+#include <tchar.h>
+
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "detours.lib")
+
+int (WINAPI *pSend)(SOCKET s, const char* buf, int len, int flags) = NULL;
+int WINAPI MySend(SOCKET s, const char* buf, int len, int flags);
+int (WINAPI *pRecv)(SOCKET s, char* buf, int len, int flags) = NULL;
+int WINAPI MyRecv(SOCKET s, char* buf, int len, int flags);
+
+#define BUFSIZE 512
+
+HANDLE hPipe;
+TCHAR  chBuf[BUFSIZE]; 
+DWORD  cbRead, cbToWrite, cbWritten, dwMode;
+LPTSTR sPipe = TEXT("\\\\.\\pipe\\hypnos");
+
+int WINAPI MySend(SOCKET s, const char *buf, int len, int flags){
+	//MessageBox(NULL, buf, "send", MB_OK);
+	WriteFile(hPipe, buf, len, &cbWritten, NULL);
+	return pSend(s, buf, len, flags);
+}
+
+int WINAPI MyRecv(SOCKET s, char *buf, int len, int flags){
+	//MessageBox(NULL, buf, "recv", MB_OK);
+	WriteFile(hPipe, buf, len, &cbWritten, NULL);
+	return pRecv(s, buf, len, flags);
+}
+
+BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved){
+	switch(ul_reason_for_call){
+		case DLL_PROCESS_ATTACH:
+			hPipe = CreateFile(sPipe, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+			pSend = (int (WINAPI *)(SOCKET, const char*, int, int))	DetourFindFunction("Ws2_32.dll", "send");
+			pRecv = (int (WINAPI *)(SOCKET, char*, int, int)) DetourFindFunction("Ws2_32.dll", "recv");
+			DetourTransactionBegin();
+			DetourUpdateThread(GetCurrentThread());
+            DetourAttach(&(PVOID&)pSend, MySend);
+            if(DetourTransactionCommit() == NO_ERROR)
+                printf("send() detoured successfully");
+            DetourTransactionBegin();
+            DetourUpdateThread(GetCurrentThread());
+            DetourAttach(&(PVOID&)pRecv, MyRecv);
+            if(DetourTransactionCommit() == NO_ERROR)
+                printf("recv() detoured successfully");
+            break;
+
+		case DLL_PROCESS_DETACH:
+			CloseHandle(hPipe);
+			DetourTransactionBegin();
+			DetourUpdateThread(GetCurrentThread());
+			DetourDetach(&(PVOID&)pSend, MySend);
+			DetourDetach(&(PVOID&)pRecv, MyRecv);
+			DetourTransactionCommit();
+			break;
+	}
+
+	return TRUE;
+}

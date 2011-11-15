@@ -1,0 +1,29 @@
+﻿<Window x:Class="Digital_World.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="The Digital World" Height="420" Width="964">
+    <Grid>
+        <GroupBox Header="Log" Margin="211,29,9,0" Height="241" VerticalAlignment="Top">
+            <Grid>
+                <TextBox Margin="0,0,0,6" Name="tLog" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible" TextWrapping="Wrap" FontFamily="Lucida Console" />
+            </Grid>
+        </GroupBox>
+        <Menu Height="23" VerticalAlignment="Top" Margin="0,0,0,0">
+            <MenuItem Header="Options" Name="mi_opt" Click="mi_opt_Click" />
+        </Menu>
+        <Button Content="Start" Height="23" HorizontalAlignment="Right" Margin="0,0,90,9" Name="bStart" VerticalAlignment="Bottom" Width="75" Click="bStart_Click" />
+        <Button Content="Stop" Height="23" HorizontalAlignment="Right" Margin="0,0,9,9" Name="bStop" VerticalAlignment="Bottom" Width="75" Click="bStop_Click" />
+        <GroupBox Header="Console" Height="65" Margin="211,0,9,38" VerticalAlignment="Bottom">
+            <Grid>
+                <TextBox Height="23" Margin="10,10,87,0" Name="tConsole" VerticalAlignment="Top" />
+                <Button Content="Send" Height="23" HorizontalAlignment="Right" Margin="0,10,6,0" Name="btnSend" VerticalAlignment="Top" Width="75" Click="btnSend_Click" />
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="Clients" Height="343" Margin="12,29,737,0" VerticalAlignment="Top">
+            <Grid>
+                <ListBox Margin="6,6,6,34" Name="lClients" />
+                <Button Content="Kick" Height="23" Margin="6,0,6,6" Name="bKick" VerticalAlignment="Bottom" />
+            </Grid>
+        </GroupBox>
+    </Grid>
+</Window>

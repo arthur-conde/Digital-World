@@ -1,0 +1,27 @@
+﻿<Window x:Class="Digital_World.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Digital World Lobby Server" Height="397" Width="705">
+    <Grid>
+        <GroupBox Header="Clients" HorizontalAlignment="Left" Margin="10,29,0,29" Width="200">
+            <Grid>
+                <Button Content="Kick" Height="23" HorizontalAlignment="Right" Margin="0,0,6,6" Name="btnKick" VerticalAlignment="Bottom" Width="75" />
+                <ListBox Margin="6,6,6,35" Name="listClients" />
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="Log" Height="270" Margin="216,29,12,0" VerticalAlignment="Top">
+            <Grid>
+                <TextBox Name="tLog" FontFamily="Lucida Console" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Auto" TextWrapping="Wrap" />
+            </Grid>
+        </GroupBox>
+        <Button Content="Stop" Height="23" HorizontalAlignment="Right" Margin="0,0,12,29" Name="btnStop" VerticalAlignment="Bottom" Width="75" Click="btnStop_Click" />
+        <Button Content="Start" Height="23" HorizontalAlignment="Right" Margin="0,0,93,29" Name="btnStart" VerticalAlignment="Bottom" Width="75" Click="btnStart_Click" />
+        <StatusBar Height="23" VerticalAlignment="Bottom">
+            <StatusBarItem Content="Digital World Lobby Server" Name="sbInfo1" />
+        </StatusBar>
+        <Menu Height="23" VerticalAlignment="Top" Margin="0,0,0,0">
+            <MenuItem Header="Options" Name="mi_Options" Click="mi_Options_Click" />
+            <MenuItem Header="Debug" Name="mi_Debug" Click="mi_Debug_Click" />
+        </Menu>
+    </Grid>
+</Window>
