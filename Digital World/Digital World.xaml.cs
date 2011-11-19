@@ -14,6 +14,8 @@ using System.Windows.Shapes;
 using Digital_World.Helpers;
 using Digital_World.Packets;
 using Digital_World.Entities;
+using Digital_World.Systems;
+using Digital_World.Database;
 
 namespace Digital_World
 {
@@ -22,12 +24,13 @@ namespace Digital_World
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Yggdrasil Yggdrasil = new Yggdrasil();
+        private Yggdrasil Yggdrasil;
         public MainWindow()
         {
             InitializeComponent();
 
             Logger lLog = new Logger(tLog);
+            Yggdrasil = new Yggdrasil();
         }
 
         private void mi_opt_Click(object sender, RoutedEventArgs e)
@@ -53,8 +56,11 @@ namespace Digital_World
             {
                 case "test":
                     {
-                        byte[] buffer = Import.GetRandBytes(1321034395);
-                        Console.WriteLine(Packet.Visualize(buffer));
+                        ItemDB.Load("Data\\ItemList.bin");
+                        break;
+                    }
+                case "find":
+                    {
                         break;
                     }
                 default:

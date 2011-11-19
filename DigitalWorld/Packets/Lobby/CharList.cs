@@ -30,7 +30,7 @@ namespace Digital_World.Packets.Lobby
                     packet.WriteInt(0); //Unknown
                     packet.WriteInt(0); //Unknown. 0 or -1;*/
                 }
-                packet.WriteInt(Tamer.Partner.DigiType);
+                packet.WriteInt(Tamer.Partner.Species);
                 packet.WriteByte((byte)Tamer.Partner.Level);
                 packet.WriteString(Tamer.Partner.Name);
                 packet.WriteShort((short)Tamer.Partner.Size); //Partner Size

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Digital_World.Entities;
 using Digital_World.Packets;
+using Digital_World.Helpers;
 
 namespace Digital_World
 {
@@ -39,7 +40,6 @@ namespace Digital_World
                 case 1703:
                     {
                         client.Send(packet.ToArray());
-                        client.m_socket.Close();
                         break;
                     }
                 case 1302:
@@ -63,7 +63,7 @@ namespace Digital_World
                         int digiModel = packet.ReadInt();
                         string digiName = packet.ReadZString();
 
-                        int charId = SqlDB.CreateCharacter(client.AccountID, position, model, name);
+                        int charId = SqlDB.CreateCharacter(client.AccountID, position, model, name, digiModel);
                         int digiId = SqlDB.CreateDigimon(charId, digiName, digiModel);
                         SqlDB.SetPartner(charId, digiId);
                         SqlDB.SetTamer(charId, digiId);
@@ -91,16 +91,18 @@ namespace Digital_World
                     {
                         //Request Map Server
                         int slot = packet.ReadInt();
+                        Position pLoc = null;
                         try
                         {
                             SqlDB.SetLastChar(client.AccountID, slot);
+                            pLoc = SqlDB.GetTamerPosition(client.AccountID, slot);
                         }
                         catch (Exception e)
                         {
                             Console.WriteLine(e);
                         }
-                        client.Send(new Packets.Lobby.ServerIP(Properties.Settings.Default.MapServer, Properties.Settings.Default.MapPort, 
-                            1, "DATS_CENTER"));
+                        client.Send(new Packets.Lobby.ServerIP(Properties.Settings.Default.MapServer, Properties.Settings.Default.MapPort,
+                            pLoc.Map, pLoc.MapName));
                         break;
                     }
                 default:

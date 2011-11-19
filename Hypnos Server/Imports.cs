@@ -181,7 +181,11 @@ namespace Hypnos_Server
             public Packet(byte[] b, bool FromClient, int length)
             {
                 this.length = length;
-                buffer = b;
+                buffer = new byte[length];
+                for (int i = 0; i < length; i++)
+                {
+                    buffer[i] = b[i];
+                }
                 direction = FromClient ? "Client->Server" : "Server->Client";
             }
 

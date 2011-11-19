@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using Digital_World.Entities;
 using MySql.Data.MySqlClient;
 using Digital_World.Helpers;
+using Digital_World.Database;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace Digital_World
 {
@@ -16,7 +19,7 @@ namespace Digital_World
         /// <returns>True if name is available; otherwise false.</returns>
         public static bool NameAvail(string name)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             bool avail = false;
             MySqlDataReader read = null;
 
@@ -24,7 +27,7 @@ namespace Digital_World
             {
                 MySqlCommand cmd = new MySqlCommand(
                     "SELECT * FROM `chars` WHERE `charName` = @name"
-                    , m_con);
+                    , Connection);
                 cmd.Parameters.AddWithValue("@name", name);
 
                 read = cmd.ExecuteReader();
@@ -45,31 +48,67 @@ namespace Digital_World
 
         public static List<Character> GetCharacters(uint AcctId)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             List<Character> chars = new List<Character>();
-            MySqlDataReader read = null;
+            MySqlDataReader dr = null;
             try
             {
                 MySqlCommand cmd = new MySqlCommand(
                     "SELECT * FROM `chars` WHERE `accountId` = @id"
-                    , m_con);
+                    , Connection);
                 cmd.Parameters.AddWithValue("@id", AcctId);
 
-                read = cmd.ExecuteReader();
-                if (read.HasRows)
+                dr = cmd.ExecuteReader();
+                if (dr.HasRows)
                 {
-                    while (read.Read())
+                    while (dr.Read())
                     {
                         Character Tamer = new Character();
                         Tamer.AccountId = AcctId;
-                        Tamer.CharacterId = Convert.ToUInt32((int)read["characterId"]); ;
-                        Tamer.Model = (CharacterModel)(int)read["charModel"];
-                        Tamer.Name = (string)read["charName"];
-                        Tamer.Level = (int)read["charLv"];
-                        Tamer.Location = new Helpers.Position((short)(int)read["map"], (int)read["x"], (int)read["y"]);
+                        Tamer.CharacterId = Convert.ToUInt32((int)dr["characterId"]); ;
+                        Tamer.Model = (CharacterModel)(int)dr["charModel"];
+                        Tamer.Name = (string)dr["charName"];
+                        Tamer.Level = (int)dr["charLv"];
+                        Tamer.Location = new Helpers.Position((short)(int)dr["map"], (int)dr["x"], (int)dr["y"]);
 
-                        Tamer.DigimonList.Add(GetDigimon((uint)(int)read["partner"]));
-                        Tamer.Partner = Tamer.DigimonList[0];
+                        Tamer.Partner = GetDigimon((uint)(int)dr["partner"]);
+                        if (dr["mercenary1"] != DBNull.Value)
+                        {
+                            int mercId = (int)dr["mercenary1"];
+                            Digimon merc = GetDigimon((uint)mercId);
+                            Tamer.DigimonList[1] = merc;
+                        }
+                        if (dr["mercenary2"] != DBNull.Value)
+                        {
+                            int mercId = (int)dr["mercenary2"];
+                            Digimon merc = GetDigimon((uint)mercId);
+                            Tamer.DigimonList[2] = merc;
+                        }
+
+                         try
+                        {
+                            BinaryFormatter f = new BinaryFormatter();
+                            Tamer.ArchivedDigimon = (uint[])f.Deserialize(new MemoryStream((byte[])dr["archive"]));
+                            for (int i = 0; i < Tamer.ArchivedDigimon.Length; i++)
+                            {
+                                if (Tamer.ArchivedDigimon[i] != 0)
+                                {
+                                    Digimon digi = GetDigimon(Tamer.ArchivedDigimon[i]);
+                                    ResetModel(digi.DigiId, digi.Species);
+                                }
+                            }
+
+                        }
+                        catch { Tamer.ArchivedDigimon = new uint[40]; }
+
+                        try
+                        {
+                            Tamer.Equipment = ItemList.Deserialize((byte[])dr["equipment"]);
+                        }
+                        catch
+                        {
+                            Tamer.Equipment = new ItemList(27);
+                        }
 
                         chars.Add(Tamer);
                     }
@@ -81,7 +120,7 @@ namespace Digital_World
             }
             finally
             {
-                try { read.Close(); }
+                try { dr.Close(); }
                 catch { }
             }
             return chars;
@@ -89,7 +128,7 @@ namespace Digital_World
 
         public static Digimon GetDigimon(uint DigiId)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             Digimon digimon = null;
             MySqlDataReader read = null;
             try
@@ -109,9 +148,12 @@ namespace Digital_World
                         digimon.CharacterId = (int)read["characterId"];
                         digimon.Name = (string)read["digiName"];
                         digimon.Level = (int)read["digiLv"];
-                        digimon.DigiType = (int)read["digiType"];
+                        digimon.Species = (int)read["digiType"];
+                        digimon.CurrentForm = digimon.Species;
                         digimon.Size = (short)(int)read["digiSize"];
                         digimon.Scale = (int)read["digiScale"];
+
+                        ResetModel(DigiId, digimon.Species);
                     }
                 }
             }
@@ -127,19 +169,96 @@ namespace Digital_World
             return digimon;
         }
 
+        public static void ResetModel(uint DigiId, int digiType)
+        {
+            try
+            {
+                MySqlCommand cmd = new MySqlCommand("UPDATE `digimon` SET `digiModel` = @type WHERE `digimonId` = @id", Connect());
+                cmd.Parameters.AddWithValue("@id", DigiId);
+                cmd.Parameters.AddWithValue("@type", digiType);
+                cmd.ExecuteNonQuery();
+            }
+            catch(MySqlException e)
+            {
+                Console.WriteLine("Error: ResetModel({1}, {2})\n{0}", e, DigiId, digiType);
+            }
+        }
+
+        public static Position GetTamerPosition(uint acctId, int slot)
+        {
+            MySqlDataReader dr = null;
+            Position Location = null;
+            try
+            {
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM `acct` WHERE `accountId` = @acct", Connect());
+                cmd.Parameters.AddWithValue("@acct", acctId);
+                dr = cmd.ExecuteReader(System.Data.CommandBehavior.SingleRow);
+                int charId = -1;
+                if (dr.HasRows && dr.Read())
+                {
+                    if (slot != -1)
+                    {
+                        charId = (int)dr[string.Format("char{0}", slot + 1)];
+                    }
+                }
+                dr.Close();
+
+                if (slot != -1)
+                {
+                    cmd = new MySqlCommand("SELECT `map`,`x`,`y` FROM `chars` WHERE `characterId` = @char", Connect());
+                    cmd.Parameters.AddWithValue("@char", charId);
+                    dr = cmd.ExecuteReader(System.Data.CommandBehavior.SingleRow);
+
+                    if (dr.HasRows && dr.Read())
+                    {
+                        Location = new Helpers.Position((int)dr["map"], (int)dr["x"], (int)dr["y"]);
+                    }
+                    dr.Close();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                if (dr != null && !dr.IsClosed) dr.Close();
+            }
+            return Location;
+        }
+
         public static int CreateDigimon(int charId, string digiName, int digiModel)
         {
             int digiId = -1;
             MySqlDataReader read = null;
             try
             {
+                DigimonData dData = DigimonDB.GetDigimon(digiModel);
+
                 MySqlCommand cmd = new MySqlCommand(
-                    "INSERT INTO `digimon` (`digiName`,`digiType`, `characterId`)" +
-                    "VALUES (@digiName, @digiModel, @char)"
+                    "INSERT INTO `digimon` (`digiName`,`digiType`, `characterId`, `digiModel`, `maxHP`, `HP`, `maxDS`, `DS`, `DE`, `AT`, `sync`, `HT`, `EV`, `CR`, `MS`, `AS`)" +
+                    "VALUES (@digiName, @digiModel, @char, @digiModel, @hp, @hp, @ds, @ds, @de, @at, @sync, @ht, @ev, @cr, @ms, @as)"
                     , Connect());
+
                 cmd.Parameters.AddWithValue("@digiName", digiName);
                 cmd.Parameters.AddWithValue("@digiModel", digiModel);
                 cmd.Parameters.AddWithValue("@char", charId);
+
+                cmd.Parameters.AddWithValue("@hp", dData.HP);
+                cmd.Parameters.AddWithValue("@ds", dData.DS);
+
+                cmd.Parameters.AddWithValue("@de", dData.DE);
+                cmd.Parameters.AddWithValue("@at", dData.AT);
+                if (31001 <= digiModel && digiModel <= 31004)
+                    cmd.Parameters.AddWithValue("@sync", 5);
+                else
+                    cmd.Parameters.AddWithValue("@sync", 0);
+                cmd.Parameters.AddWithValue("@ht", dData.HT);
+                cmd.Parameters.AddWithValue("@ev", dData.EV);
+                cmd.Parameters.AddWithValue("@cr", dData.CR);
+                cmd.Parameters.AddWithValue("@ms", dData.MS);
+                cmd.Parameters.AddWithValue("@as", dData.AS);
+
                 cmd.ExecuteNonQuery();
 
                 cmd = new MySqlCommand(
@@ -167,7 +286,7 @@ namespace Digital_World
             return digiId;
         }
 
-        public static int CreateCharacter(uint AcctId, int pos, int charModel, string charName)
+        public static int CreateCharacter(uint AcctId, int pos, int charModel, string charName, int digiModel)
         {
             int charId = -1;
             MySqlDataReader read = null;
@@ -176,12 +295,15 @@ namespace Digital_World
 
                 MySqlConnection con = Connect();
                 MySqlCommand cmd = new MySqlCommand(
-                    "INSERT INTO `chars` (`charName`, `charModel`, `accountId`, `inventory`, `storage`, `equipment`, `quests`, `maxHP`, `maxDS`, `HP`, `DS`,`AT`, `DE`) " +
-                    "VALUES (@charName, @charModel, @acctId, @inv, @bank,@equip,@quest, @hp, @mp, @hp, @mp, @at, @de)"
+                    "INSERT INTO `chars` "+
+                    "(`charName`, `charModel`, `accountId`, `inventory`, `storage`, `equipment`, `quests`, `maxHP`, `maxDS`, `HP`, `DS`,`AT`, `DE`) " +
+                    "VALUES "+
+                    "(@charName, @charModel, @acctId, @inv, @bank,@equip,@quest, @hp, @mp, @hp, @mp, @at, @de)"
                     , con);
                 cmd.Parameters.AddWithValue("@charName", charName);
                 cmd.Parameters.AddWithValue("@charModel", charModel);
                 cmd.Parameters.AddWithValue("@acctId", AcctId);
+                cmd.Parameters.AddWithValue("@digiModel", digiModel);
                 cmd.Parameters.AddWithValue("@inv", new ItemList(63).Serialize());
                 cmd.Parameters.AddWithValue("@bank", new ItemList(70).Serialize());
                 cmd.Parameters.AddWithValue("@equip", new ItemList(27).Serialize());
@@ -256,7 +378,7 @@ namespace Digital_World
             try
             {
                 MySqlCommand cmd = new MySqlCommand(
-                    "UPDATE `chars` SET `partner` = @digiId WHERE `characterId` = @charId", m_con);
+                    "UPDATE `chars` SET `partner` = @digiId WHERE `characterId` = @charId", Connection);
                 cmd.Parameters.AddWithValue("@digiId", digiId);
                 cmd.Parameters.AddWithValue("@charId", charId);
                 cmd.ExecuteNonQuery();
@@ -272,7 +394,7 @@ namespace Digital_World
             try
             {
                 MySqlCommand cmd = new MySqlCommand(
-                    "UPDATE `digimon` SET `characterId` = @charId WHERE `digimonId` = @digiId", m_con);
+                    "UPDATE `digimon` SET `characterId` = @charId WHERE `digimonId` = @digiId", Connection);
                 cmd.Parameters.AddWithValue("@digiId", digiId);
                 cmd.Parameters.AddWithValue("@charId", charId);
                 cmd.ExecuteNonQuery();
@@ -342,13 +464,13 @@ namespace Digital_World
 
                     DeleteDigimons(charId);
 
-                    cmd = new MySqlCommand("DELETE FROM `chars` WHERE `characterId` = @char", m_con);
+                    cmd = new MySqlCommand("DELETE FROM `chars` WHERE `characterId` = @char", Connection);
                     cmd.Parameters.AddWithValue("@char", charId);
                     cmd.ExecuteNonQuery();
 
                     cmd = new MySqlCommand(
                         string.Format("UPDATE `acct` SET `char{0}` = NULL WHERE `accountId` = @acct", slot + 1)
-                        , m_con);
+                        , Connection);
                     cmd.Parameters.AddWithValue("@acct", acctId);
                     cmd.ExecuteNonQuery();
 
@@ -372,7 +494,7 @@ namespace Digital_World
             {
                 MySqlCommand cmd = new MySqlCommand(
                     "DELETE FROM `digimon` WHERE `characterId` = @char"
-                    , m_con);
+                    , Connection);
                 cmd.Parameters.AddWithValue("@char", charId);
                 cmd.ExecuteNonQuery();
             }
@@ -392,7 +514,7 @@ namespace Digital_World
             try
             {
                 MySqlCommand cmd = new MySqlCommand("UPDATE `acct` SET `lastChar` = @char WHERE `accountId` = @acct",
-                    m_con);
+                    Connection);
                 cmd.Parameters.AddWithValue("@acct", acctId);
                 cmd.Parameters.AddWithValue("@char", slot);
                 cmd.ExecuteNonQuery();

@@ -17,12 +17,22 @@ namespace Digital_World
         private static string db_pass = "shikifuuin";
         private static string db_schema = "dmo";
         private static MySqlConnection m_con;
+        private static MySqlConnection Connection
+        {
+            get
+            {
+                if (m_con.State != ConnectionState.Open)
+                    m_con = Connect();
+                return m_con;
+            }
+            set { m_con = value; }
+        }
 
         private static Random RNG = new Random();
 
         static SqlDB()
         {
-            m_con = Connect();
+            Connection = Connect();
         }
 
         public static MySqlConnection Connect()
@@ -33,7 +43,7 @@ namespace Digital_World
                 conn.Open();
                 return conn;
             }
-            catch (MySqlException e)
+            catch (MySqlException)
             {
                 return null;
             }
@@ -41,12 +51,12 @@ namespace Digital_World
 
         public static int Validate(Client client, string user, string pass)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             MySqlDataReader read = null;
             int level = 0;
             try
             {
-                MySqlCommand cmd = new MySqlCommand("SELECT * FROM `acct` WHERE `username` = @user", m_con);
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM `acct` WHERE `username` = @user", Connection);
 
                 cmd.Parameters.AddWithValue("@user", user);
 
@@ -108,10 +118,10 @@ namespace Digital_World
 
         public static bool CreateUser(string user, string pass)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             try
             {
-                MySqlCommand cmd = new MySqlCommand("INSERT INTO `acct` (`username`, `password`)  VALUES (@user, @pass)", m_con);
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO `acct` (`username`, `password`)  VALUES (@user, @pass)", Connection);
 
                 cmd.Parameters.AddWithValue("@user", user);
                 cmd.Parameters.AddWithValue("@pass", SHA2(pass));
@@ -137,11 +147,11 @@ namespace Digital_World
         /// <param name="client">Client</param>
         public static void LoadUser(Client client)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             MySqlDataReader read = null;
             try
             {
-                MySqlCommand cmd = new MySqlCommand("SELECT * FROM `acct` WHERE `username` = @user", m_con);
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM `acct` WHERE `username` = @user", Connection);
                 cmd.Parameters.AddWithValue("@user", client.Username);
 
                 read = cmd.ExecuteReader(CommandBehavior.SingleRow);
@@ -186,11 +196,11 @@ namespace Digital_World
         /// <param name="UniId">Unique ID</param>
         public static void LoadUser(Client client, uint AccountID, int UniId)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             MySqlDataReader read = null;
             try
             {
-                MySqlCommand cmd = new MySqlCommand("SELECT * FROM `acct` WHERE `accountId` = @id", m_con);
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM `acct` WHERE `accountId` = @id", Connection);
                 cmd.Parameters.AddWithValue("@id", AccountID);
 
                 read = cmd.ExecuteReader(CommandBehavior.SingleRow);
@@ -228,13 +238,13 @@ namespace Digital_World
 
         public static Dictionary<int, string> GetServers()
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             MySqlDataReader data = null;
             Dictionary<int, string> servers = new Dictionary<int, string>();
             try
             {
                 MySqlCommand cmd = new MySqlCommand(
-                    "SELECT `serverid`, `name` FROM servers", m_con);
+                    "SELECT `serverid`, `name` FROM servers", Connection);
                 data = cmd.ExecuteReader();
                 if (data.HasRows)
                 {
@@ -259,13 +269,13 @@ namespace Digital_World
 
         public static KeyValuePair<int, string> GetServer(int ID)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             KeyValuePair<int, string> k = new KeyValuePair<int,string>(6999,"127.0.0.1");
             MySqlDataReader data = null;
             try
             {
                 MySqlCommand cmd = new MySqlCommand(
-                    "SELECT port, INET_NTOA(ip) ip FROM servers WHERE `serverId` = @id", m_con);
+                    "SELECT port, INET_NTOA(ip) ip FROM servers WHERE `serverId` = @id", Connection);
                 cmd.Parameters.AddWithValue("@id", ID);
 
                 data = cmd.ExecuteReader();
@@ -299,14 +309,14 @@ namespace Digital_World
         /// <returns>The number of characters tied to AcctId</returns>
         public static int GetNumChars(uint AcctId)
         {
-            if (m_con == null) m_con = Connect();
+            if (Connection == null) Connection = Connect();
             int characters = 0;
             MySqlDataReader read = null;
             try
             {
                 MySqlCommand cmd = new MySqlCommand(
                     "SELECT * FROM `chars` WHERE `accountId` = @id"
-                    , m_con);
+                    , Connection);
                 cmd.Parameters.AddWithValue("@id", AcctId);
 
                 read = cmd.ExecuteReader();

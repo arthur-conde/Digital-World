@@ -39,8 +39,11 @@ namespace Digital_World.Helpers
         {
             get
             {
-                index %= 9;
                 return m_equip[index];
+            }
+            set
+            {
+                m_equip[index] = value;
             }
         }
 

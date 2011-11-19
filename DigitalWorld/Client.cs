@@ -55,13 +55,14 @@ namespace Digital_World
 
         private void EndSend(IAsyncResult ar)
         {
-
-            try {
+            try
+            {
                 m_socket.EndSend(ar);
             }
+            catch (ObjectDisposedException) { }
             catch (Exception e)
             {
-                Console.WriteLine("Error: EndSend()\n{0}",e);
+                Console.WriteLine("Error: EndSend()\n{0}", e);
             }
         }
 
@@ -78,7 +79,16 @@ namespace Digital_World
             if (Tamer == null)
                 return string.Format("{0}", m_socket.RemoteEndPoint);
             else
-                return Tamer.ToString();
+                return string.Format("{0} - {1}", m_socket.RemoteEndPoint, Tamer);
+        }
+
+        /// <summary>
+        /// Sends the contents of PacketReader to the client.
+        /// </summary>
+        /// <param name="packet">PacketReader object</param>
+        public void Send(PacketReader packet)
+        {
+            Send(packet.ToArray());
         }
     }
 }

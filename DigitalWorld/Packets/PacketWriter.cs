@@ -58,12 +58,9 @@ namespace Digital_World
             m_stream.Write(BitConverter.GetBytes(type), 0, 2);
         }
 
-        public void Headers(int u1, int u2)
+        public void WriteFloat(float value)
         {
-            WriteInt(u1);
-            WriteInt(u2);
-            WriteShort((short)8);
-            Type(0x45);
+            m_stream.Write(BitConverter.GetBytes(value), 0, 2);
         }
 
         public void WriteUInt(uint value)

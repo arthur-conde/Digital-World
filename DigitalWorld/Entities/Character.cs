@@ -22,12 +22,14 @@ namespace Digital_World.Entities
     {
         public uint AccountId = 0;
         public uint CharacterId = 0;
+        public int Starter = 0;
         public uint intHandle = 0;
         public ItemList Equipment = new ItemList(27);
         public int Level = 1;
         public CharacterModel Model = CharacterModel.NULL;
         public string Name = string.Empty;
         public int lastChar = 0;
+        public int Money = 0;
 
         public int MaxHP = 0;
         public int MaxDS = 0;
@@ -46,19 +48,38 @@ namespace Digital_World.Entities
         public ItemList Storage = new ItemList(70);
         public Position Location = new Position();
 
-        public List<Digimon> DigimonList = new List<Digimon>();
+        /// <summary>
+        /// A list of digiIds in the Archive
+        /// </summary>
+        public uint[] ArchivedDigimon = new uint[40];
+        public Digimon[] DigimonList = new Digimon[3];
         public QuestList Quests;
+
+        public bool Riding = false;
+        public int RidingInt = 0;
 
         /// <summary>
         /// The current active Digimon
         /// </summary>
-        public Digimon Partner = null;
+        public Digimon Partner
+        {
+            get
+            {
+                return DigimonList[0];
+            }
+            set
+            {
+                DigimonList[0] = value;
+            }
+        }
 
         public Character() {
             Equipment = new ItemList(27);
             Inventory = new ItemList(63);
             Storage = new ItemList(70);
             Quests = new QuestList();
+            ArchivedDigimon = new uint[40];
+            DigimonList = new Digimon[3];
         }
 
         public Character(uint AcctId, string charName, int charModel)
@@ -70,11 +91,25 @@ namespace Digital_World.Entities
             Inventory = new ItemList(63);
             Storage = new ItemList(70);
             Quests = new QuestList();
+            ArchivedDigimon = new uint[40];
+            DigimonList = new Digimon[3];
         }
 
         public override string ToString()
         {
             return string.Format("Tamer: Lv {1} {0}", Name, Level);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (typeof(Character) != obj.GetType())
+            {
+                return base.Equals(obj);
+            }
+            else
+            {
+                return (obj as Character).AccountId == this.AccountId;
+            }
         }
 
         public uint ProperModel
@@ -106,14 +141,16 @@ namespace Digital_World.Entities
             }
         }
 
-        public short MapHandle
+        public short TamerHandle
         {
             get
             {
-                byte[] b = new byte[] { (byte)((intHandle >> 24) & 0xFF), 0x20 };
+                byte[] b = new byte[] { (byte)((intHandle >> 32) & 0xFF), 0x20 };
                 return BitConverter.ToInt16(b, 0);
             }
         }
+
+        public short DigimonHandle = 0;
 
         //public short hMap = 0;
     }

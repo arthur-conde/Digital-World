@@ -58,6 +58,13 @@ namespace Digital_World.Packets
             return BitConverter.ToInt16(buffer, 0);
         }
 
+        public float ReadFloat()
+        {
+            byte[] buffer = new byte[4];
+            packet.Read(buffer, 0, 4);
+            return BitConverter.ToSingle(buffer, 0);
+        }
+
         /// <summary>
         /// Reads a string with preceeding length
         /// </summary>

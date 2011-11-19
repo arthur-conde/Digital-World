@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Digital_World.Database;
 
 namespace Digital_World.Entities
 {
@@ -9,8 +10,8 @@ namespace Digital_World.Entities
         private static Random r = new Random();
         public uint Handle = 0;
 
-        public short ItemId = 0;
-        public short Modifier = 0;
+        public ushort ItemId = 0;
+        public ushort Modifier = 0;
         public short Count = 0;
         public short Unknown1 = 0;
         public short[] Attributes = new short[2];
@@ -19,16 +20,18 @@ namespace Digital_World.Entities
         public short Unknown4 = 0;
         public short Unknown5 = 0;
         public short Unknown6 = 0;
-        public short Unknown7 = 0;
+        public uint time_t = 0;
 
-        public Item() { }
+        public Item() 
+        {
+        }
 
         public Item(short itemId)
         {
             byte[] b = new byte[4];
             r.NextBytes(b);
             Handle = BitConverter.ToUInt32(b, 0);
-            ItemId = itemId;
+            ItemId = (ushort)itemId;
         }
 
         public override bool Equals(object obj)
@@ -66,10 +69,47 @@ namespace Digital_World.Entities
             buffer.Write(BitConverter.GetBytes(Unknown3), 0, 2);
             buffer.Write(BitConverter.GetBytes(Unknown4), 0, 2);
             buffer.Write(BitConverter.GetBytes(Unknown5), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Unknown6), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Unknown7), 0, 2);
+            buffer.Write(BitConverter.GetBytes(time_t), 0, 4);
 
             return buffer.ToArray();
+        }
+
+        /// <summary>
+        /// Full ID of the item
+        /// </summary>
+        public int ID
+        {
+            get
+            {
+                return (Modifier << 16) + ItemId;
+            }
+            set
+            {
+                Modifier = (ushort)(value >> 16);
+                ItemId = (ushort)(value & 0xffff);
+            }
+        }
+
+        /// <summary>
+        /// Property linked to item database
+        /// </summary>
+        public ItemData ItemData
+        {
+            get
+            {
+                return ItemDB.GetItem(this.ID);
+            }
+        }
+
+        /// <summary>
+        /// Maximum amount allowed per inventory slot
+        /// </summary>
+        public int Max
+        {
+            get
+            {
+                return ItemData.Stack;
+            }
         }
     }
 }

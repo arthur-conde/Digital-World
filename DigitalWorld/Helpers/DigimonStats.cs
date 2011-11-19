@@ -8,18 +8,48 @@ namespace Digital_World.Helpers
 {
     public class DigimonStats
     {
-        public short MaxHP = 0;
-        public short MaxDS = 0;
-        public short HP = 0;
-        public short DS = 0;
+        private short m_hp = 100;
+        private short m_ds = 100;
+
+
+        public short MaxHP = 100;
+        public short MaxDS = 100;
+
+        public short HP
+        {
+            get
+            {
+                return m_hp;
+            }
+            set
+            {
+                if (value >= MaxHP) value = MaxHP;
+                if (value <= 0) value = 0;
+                m_hp = value;
+            }
+        }
+
+        public short DS
+        {
+            get
+            {
+                return m_ds;
+            }
+            set
+            {
+                if (value >= MaxDS) value = MaxDS;
+                if (value <= 0) value = 0;
+                m_ds = value;
+            }
+        }
         /// <summary>
         /// Attack Stat
         /// </summary>
-        public short AT = 0;
+        public short AT = 1;
         /// <summary>
         /// Defense stat
         /// </summary>
-        public short DE = 0;
+        public short DE = 1;
         /// <summary>
         /// Hit Rate
         /// </summary>
@@ -27,7 +57,7 @@ namespace Digital_World.Helpers
         /// <summary>
         /// Evade
         /// </summary>
-        public short EV = 0;
+        public short EV = 10;
         /// <summary>
         /// Critical rate
         /// </summary>
@@ -35,15 +65,28 @@ namespace Digital_World.Helpers
         /// <summary>
         /// Attack Speed
         /// </summary>
-        public short AS = 0;
+        public short AS = 1000;
         /// <summary>
         /// Movement Speed?
         /// </summary>
-        public short MS = 0;
+        public short MS = 550;
+        /// <summary>
+        /// Unknown Stat
+        /// </summary>
+        public short uStat = 80;
 
         public short Intimacy = 0;
 
         public DigimonStats() { }
+
+        public void Max()
+        {
+            MaxHP = MaxDS = DS = HP = short.MaxValue;
+            AT = DE = HT = EV = CR = 1000;
+            MS = 1200;
+            AS = 5000;
+            Intimacy = 100;
+        }
 
         public byte[] ToArray()
         {
@@ -67,6 +110,12 @@ namespace Digital_World.Helpers
             m.Close();
 
             return buffer;
+        }
+
+        public void Recover()
+        {
+            this.HP += (short)Math.Ceiling(this.MaxHP * 0.02);
+            this.DS += (short)Math.Ceiling(this.MaxDS * 0.02);
         }
     }
 }

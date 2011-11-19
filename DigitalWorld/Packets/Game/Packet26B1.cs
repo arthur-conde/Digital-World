@@ -5,9 +5,9 @@ using System.Text;
 
 namespace Digital_World.Packets.Game
 {
-    public class Packet26B2:Packet
+    public class UpdateMS:Packet
     {
-        public Packet26B2(short TamerId, short DigiId, short TamerMS, short DigiMS)
+        public UpdateMS(short TamerId, short DigiId, short TamerMS, short DigiMS)
         {
             packet.Type(9905);
             packet.WriteShort(TamerId);
@@ -18,6 +18,17 @@ namespace Digital_World.Packets.Game
             packet.WriteShort(0);
             packet.WriteShort(0);
             packet.WriteShort(0);
+        }
+
+        public UpdateMS(short TamerId, short DigiId, short MS, int uInt1, int uInt2)
+        {
+            packet.Type(9905);
+            packet.WriteShort(TamerId);
+            packet.WriteShort(DigiId);
+            packet.WriteShort(MS);
+            packet.WriteShort(MS);
+            packet.WriteInt(uInt1);
+            packet.WriteInt(uInt2);
         }
     }
 }

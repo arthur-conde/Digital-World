@@ -13,6 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Digital_World.Network;
 using System.Collections.ObjectModel;
+using Digital_World.Database;
 
 namespace Digital_World
 {
@@ -35,6 +36,8 @@ namespace Digital_World
 
             Logger l = new Logger(tLog);
             //listClients.ItemsSource = clients;
+
+            MapDB.Load("Data\\MapList.bin");
 
             Console.WriteLine("This server is configured to route players to the game server at {0}:{1}",
                 Properties.Settings.Default.MapServer, Properties.Settings.Default.MapPort);

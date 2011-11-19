@@ -92,7 +92,6 @@ namespace Digital_World
                                 //Normal Login
                                 Console.WriteLine("Successful login: {0}\n Sending Server List", user);
                                 client.Send(new Packets.Auth.ServerList(SqlDB.GetServers(), user, client.Characters));
-                                //state.Send(new Packets.LoginMessage(string.Format("You are not a valid user.")));
                                 break;
                         }
 #endif
@@ -100,7 +99,6 @@ namespace Digital_World
                     }
                 case 1702:
                     {
-                        Console.WriteLine("Packet: Type 1702 from {0}",client.m_socket.RemoteEndPoint);
                         //Requesting IP of Server
                         int serverID = BitConverter.ToInt32(buffer, 4);
                         KeyValuePair<int, string> server = SqlDB.GetServer(serverID);
@@ -109,6 +107,13 @@ namespace Digital_World
                         client.Send(packet);
                         break;
                     }
+                case 0x6A5:
+                    {
+                        client.Send(new Packets.Auth.ServerList(SqlDB.GetServers(), client.Username, client.Characters));
+                        break;
+                    }
+                case -3:
+                    break;
                 default:
                     {
                         Console.WriteLine("Unknown Packet ID: {0}", type);

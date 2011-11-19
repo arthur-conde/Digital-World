@@ -50,7 +50,6 @@ namespace Digital_World.Network
 
         public delegate void dlgAccept(Client client);
         public delegate void dlgRead(Client client, byte[] buffer, int length);
-        public delegate void dlgSend(IAsyncResult ar);
         public delegate void dlgClose(Client client);
 
         /// <summary>
@@ -61,7 +60,6 @@ namespace Digital_World.Network
         /// Called when a complete packet is read
         /// </summary>
         public event dlgRead OnRead;
-        public event dlgSend OnSend;
         public event dlgClose OnClose;
 
         private void Start(object state)
@@ -74,8 +72,6 @@ namespace Digital_World.Network
                 ServerInfo info = (ServerInfo)state;
                 Port = info.Port;
                 ipAddress = info.Host;
-
-                 Console.WriteLine("Listening on {0}", info);
             }
             else
             {
@@ -139,10 +135,7 @@ namespace Digital_World.Network
                 else
                     handler.BeginReceive(state.buffer, 0, Client.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
             }
-            catch (ObjectDisposedException)
-            {
-                
-            }
+            catch (ObjectDisposedException) { }
             catch (Exception e)
             {
                 Console.WriteLine("ERROR: AcceptCallback\n{0}", e);
@@ -160,10 +153,15 @@ namespace Digital_World.Network
             {
                 handler.BeginReceive(state.buffer, 0, Client.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
             }
-            catch (ObjectDisposedException)
+            catch (Exception e)
             {
-                if (OnClose != null)
-                    OnClose.BeginInvoke(state, new AsyncCallback(EndClose), state);
+                if (e is ObjectDisposedException || (e is SocketException))
+                {
+                    if (OnClose != null)
+                        OnClose.BeginInvoke(state, new AsyncCallback(EndClose), state);
+                }
+                else
+                    throw;
             }
         }
 
@@ -220,15 +218,13 @@ namespace Digital_World.Network
                     handler.BeginReceive(state.buffer, 0, Client.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
                 }
             }
-            catch (ObjectDisposedException)
+            catch (Exception e)
             {
-                if (OnClose != null)
-                    OnClose.BeginInvoke(state, new AsyncCallback(EndClose), state);
-            }
-            catch (SocketException)
-            {
-                if (OnClose != null)
-                    OnClose.BeginInvoke(state, new AsyncCallback(EndClose), state);
+                if (e is ObjectDisposedException || e is SocketException)
+                    if (OnClose != null)
+                        OnClose.BeginInvoke(state, new AsyncCallback(EndClose), state);
+                    else
+                        throw;
             }
         }
 
@@ -267,6 +263,7 @@ namespace Digital_World.Network
         {
             try
             {
+                Console.WriteLine("A connection has closed.");
                 OnClose.EndInvoke(ar);
             }
             catch
