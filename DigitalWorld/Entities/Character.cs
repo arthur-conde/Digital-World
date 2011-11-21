@@ -49,6 +49,15 @@ namespace Digital_World.Entities
         public Position Location = new Position();
 
         /// <summary>
+        /// The current egg in the incubator
+        /// </summary>
+        public int Incubator = 0;
+        /// <summary>
+        /// The level of the egg in the incubator
+        /// </summary>
+        public int IncubatorLevel = 0;
+
+        /// <summary>
         /// A list of digiIds in the Archive
         /// </summary>
         public uint[] ArchivedDigimon = new uint[40];
@@ -118,29 +127,13 @@ namespace Digital_World.Entities
             {
                 uint iModel = 0x9C40A0;
                 iModel += (((uint)Model - 80001) * 128);
-                /*switch (Model)
-                {
-                    case CharacterModel.Masaru: //?? A0
-                        {
-                            iModel = -25536; //A0 40 9C
-                            break;
-                        }
-                    case CharacterModel.Yoshino: //?? A0
-                    case CharacterModel.Tohma: //?? 20
-                        {
-                            iModel = -25535; //20 41 9C
-                            break;
-                        }
-                    case CharacterModel.Ikuto:
-                        {
-                            iModel = -25534;
-                            break;
-                        }
-                }*/
                 return (iModel << 8);
             }
         }
 
+        /// <summary>
+        /// Handle to the Tamer's entity
+        /// </summary>
         public short TamerHandle
         {
             get
@@ -150,8 +143,9 @@ namespace Digital_World.Entities
             }
         }
 
+        /// <summary>
+        /// Handle to the Digimon's entity
+        /// </summary>
         public short DigimonHandle = 0;
-
-        //public short hMap = 0;
     }
 }

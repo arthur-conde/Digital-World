@@ -28,13 +28,14 @@ namespace Digital_World.Helpers
 
         public byte[] Serialize()
         {
-            MemoryStream m = new MemoryStream();
-            BinaryFormatter f = new BinaryFormatter();
-            f.Serialize(m, this);
-            
-            byte[] buffer = m.ToArray();
-            m.Close();
+            byte[] buffer = new byte[0];
+            using (MemoryStream m = new MemoryStream())
+            {
+                BinaryFormatter f = new BinaryFormatter();
+                f.Serialize(m, this);
 
+                buffer = m.ToArray();
+            }
             return buffer;
         }
 
@@ -88,23 +89,28 @@ namespace Digital_World.Helpers
 
         public byte[] ToArray()
         {
-            MemoryStream m = new MemoryStream();
-            for (int i = 0; i < uShorts1.Length; i++)
+            byte[] buffer = new byte[0];
+            using (MemoryStream m = new MemoryStream())
             {
-                m.Write(BitConverter.GetBytes(uShorts1[i]), 0, 2);
+                for (int i = 0; i < uShorts1.Length; i++)
+                {
+                    m.Write(BitConverter.GetBytes(uShorts1[i]), 0, 2);
+                }
+                m.WriteByte(uByte4);
+                m.WriteByte(uByte5);
+                m.WriteByte(b128);
+                m.WriteByte(b0);
+                m.WriteByte(uByte3);
+
+                m.WriteByte(Skill1);
+                m.WriteByte(Skill2);
+                m.WriteByte(Skill3);
+
+                m.Write(BitConverter.GetBytes(uShort1), 0, 2);
+
+                buffer = m.ToArray();
             }
-            m.WriteByte(uByte4);
-            m.WriteByte(uByte5);
-            m.WriteByte(b128);
-            m.WriteByte(b0);
-            m.WriteByte(uByte3);
-
-            m.WriteByte(Skill1);
-            m.WriteByte(Skill2);
-            m.WriteByte(Skill3);
-
-            m.Write(BitConverter.GetBytes(uShort1), 0, 2);
-            return m.ToArray();
+            return buffer;
         }
     }
 }

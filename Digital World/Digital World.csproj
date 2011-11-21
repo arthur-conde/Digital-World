@@ -57,7 +57,7 @@
     </ApplicationDefinition>
     <Compile Include="Systems\Command.cs" />
     <Compile Include="Systems\PacketLogic.cs" />
-    <Compile Include="Systems\Life Support.cs" />
+    <Compile Include="Systems\UpdateMoney.cs" />
     <Compile Include="Systems\World.cs" />
     <Compile Include="Systems\Yggdrasil.cs" />
     <Page Include="Digital World.xaml">
@@ -115,6 +115,12 @@
     <None Include="Data\MapPortal.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Data\MonsterList.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Tactics.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -122,6 +128,10 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Auth Server\Auth Server.csproj">
+      <Project>{CB67DEA0-900C-40DE-B659-98CE28D5702E}</Project>
+      <Name>Auth Server</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DigitalWorld\Yggdrasil.csproj">
       <Project>{F26E3C69-CF5A-4218-AC13-410D6B5A9E1D}</Project>
       <Name>Yggdrasil</Name>

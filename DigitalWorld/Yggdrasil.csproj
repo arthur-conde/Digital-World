@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Digital_World</RootNamespace>
-    <AssemblyName>DigitalWorld</AssemblyName>
+    <AssemblyName>Yggdrasil</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,6 +32,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="lua51">
+      <HintPath>..\..\..\..\..\..\..\C# Resources\Lua\lua51.dll</HintPath>
+    </Reference>
+    <Reference Include="LuaInterface">
+      <HintPath>..\..\..\..\..\..\..\C# Resources\Lua\LuaInterface.dll</HintPath>
+    </Reference>
     <Reference Include="MySql.Data, Version=6.4.4.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -50,6 +57,8 @@
     <Compile Include="Database\ItemDB.cs" />
     <Compile Include="Database\MapDB.cs" />
     <Compile Include="Database\MapPortals.cs" />
+    <Compile Include="Database\MonsterDB.cs" />
+    <Compile Include="Database\TacticsDB.cs" />
     <Compile Include="Entities\Character.cs" />
     <Compile Include="Entities\Digimon.cs" />
     <Compile Include="Entities\GameMap.cs" />
@@ -62,17 +71,27 @@
     <Compile Include="Helpers\Import.cs" />
     <Compile Include="Helpers\ItemList.cs" />
     <Compile Include="Helpers\Position.cs" />
+    <Compile Include="Helpers\Query.cs" />
     <Compile Include="Helpers\QuestList.cs" />
+    <Compile Include="Helpers\Settings.cs" />
     <Compile Include="Network\Startup.cs" />
     <Compile Include="Packets\BasePacket.cs" />
     <Compile Include="Packets\Game\AddScannedItem.cs" />
     <Compile Include="Packets\Game\Chat\ChatNormal.cs" />
-    <Compile Include="Packets\Game\DigimonArchive.cs" />
-    <Compile Include="Packets\Game\Interface\ChangeSize.cs" />
+    <Compile Include="Packets\Game\Combat\CombatOn.cs" />
+    <Compile Include="Packets\Game\Combat\UseSkill.cs" />
+    <Compile Include="Packets\Game\Interface\Actions\DigimonArchive.cs" />
+    <Compile Include="Packets\Game\Interface\Hatching\AllowEggHatch.cs" />
+    <Compile Include="Packets\Game\Interface\Hatching\Hatch.cs" />
+    <Compile Include="Packets\Game\Interface\Update\ChangeSize.cs" />
+    <Compile Include="Packets\Game\Interface\Hatching\DataInputFailure.cs" />
+    <Compile Include="Packets\Game\Interface\MovePlayer.cs" />
+    <Compile Include="Packets\Game\Interface\Actions\ReturnEggs.cs" />
+    <Compile Include="Packets\Game\Interface\Actions\ScanEggs.cs" />
     <Compile Include="Packets\Game\SpawnObject.cs" />
     <Compile Include="Packets\Game\StopRideMode.cs" />
-    <Compile Include="Packets\Game\DespawnPlayer.cs" />
-    <Compile Include="Packets\Game\Interface\BroadcastHatch.cs" />
+    <Compile Include="Packets\Game\Interface\Map\DespawnPlayer.cs" />
+    <Compile Include="Packets\Game\Interface\Hatching\BroadcastHatch.cs" />
     <Compile Include="Packets\Game\Interface\CharInfo.cs" />
     <Compile Include="Packets\Game\Chat\Chat.cs" />
     <Compile Include="Packets\Game\Interface\DigimonSwitch.cs" />
@@ -82,19 +101,20 @@
     <Compile Include="Packets\Game\Interface\FriendList.cs" />
     <Compile Include="Packets\Game\Interface\MapChange.cs" />
     <Compile Include="Packets\Game\Interface\SendHandle.cs" />
-    <Compile Include="Packets\Game\Interface\SpawnPlayer.cs" />
+    <Compile Include="Packets\Game\Interface\Map\SpawnPlayer.cs" />
     <Compile Include="Packets\Game\Packet1704.cs" />
     <Compile Include="Packets\Game\Packet26B1.cs" />
     <Compile Include="Packets\Game\Combat\Status.cs" />
     <Compile Include="Packets\Game\Interface\EventTimer.cs" />
     <Compile Include="Packets\Game\Interface\PickupItem.cs" />
     <Compile Include="Packets\Game\Interface\TradeItem.cs" />
-    <Compile Include="Packets\Game\Interface\UpdateGold.cs" />
+    <Compile Include="Packets\Game\Interface\Update\UpdateGold.cs" />
     <Compile Include="Packets\Game\Packet3EC.cs" />
     <Compile Include="Packets\Game\RidingMode.cs" />
     <Compile Include="Packets\Game\StoreDigimon.cs" />
-    <Compile Include="Packets\Game\UpdateEquipment.cs" />
-    <Compile Include="Packets\Game\UpdateStats.cs" />
+    <Compile Include="Packets\Game\Interface\Update\UpdateEquipment.cs" />
+    <Compile Include="Packets\Game\Interface\Update\UpdateLevel.cs" />
+    <Compile Include="Packets\Game\Interface\Update\UpdateStats.cs" />
     <Compile Include="Packets\Lobby\CharDelete.cs" />
     <Compile Include="Packets\Lobby\CharList.cs" />
     <Compile Include="Packets\Lobby\ConfirmCreate.cs" />

@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Digital_World.Helpers;
 
 namespace Digital_World
 {
@@ -18,26 +19,32 @@ namespace Digital_World
     /// </summary>
     public partial class Options : Window
     {
+        private Settings mySettings;
+
         public Options()
         {
             InitializeComponent();
 
-            tHost.Text = Properties.Settings.Default.Host;
-            tPort.Text = Properties.Settings.Default.Port.ToString();
+            mySettings = Settings.Deserialize();
+
+            tHost.Text = mySettings.GameServer.Host;
+            tPort.Text = mySettings.GameServer.Port.ToString();
+            chkStart.IsChecked = new bool?(mySettings.GameServer.AutoStart);
         }
 
         private void btnOK_Click(object sender, RoutedEventArgs e)
         {
-            Properties.Settings.Default.Host = tHost.Text;
+            mySettings.GameServer.Host = tHost.Text;
+            mySettings.GameServer.AutoStart = chkStart.IsChecked.Value;
             try
             {
-                Properties.Settings.Default.Port = int.Parse(tPort.Text);
+                mySettings.GameServer.Port = int.Parse(tPort.Text);
             }
             catch (FormatException)
             {
-                Properties.Settings.Default.Port = 6999;
+                mySettings.GameServer.Port = 7000;
             }
-            Properties.Settings.Default.Save();
+            mySettings.Serialize();
 
             this.DialogResult = new bool?(true);
         }

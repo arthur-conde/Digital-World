@@ -6,20 +6,23 @@ using Digital_World.Network;
 using System.Threading;
 using System.Collections.ObjectModel;
 using Digital_World.Database;
+using Digital_World.Helpers;
 
 namespace Digital_World.Systems
 {
     public partial class Yggdrasil
     {
         private SocketWrapper server = null;
-        public string Host { get { return Properties.Settings.Default.Host; } }
-        public int Port { get { return Properties.Settings.Default.Port; } }
         private Thread tMain = null;
+        private Settings Opt = null;
+
 
         public ObservableCollection<Client> Clients = new ObservableCollection<Client>();
 
         public Yggdrasil()
         {
+            Opt = Settings.Deserialize();
+
             server = new SocketWrapper();
             server.OnAccept += new SocketWrapper.dlgAccept(server_OnAccept);
             server.OnClose += new SocketWrapper.dlgClose(server_OnClose);
@@ -31,6 +34,10 @@ namespace Digital_World.Systems
             PortalDB.Load("Data\\MapPortal.bin");
             DigimonDB.Load("Data\\DigimonList.bin");
             ItemDB.Load("Data\\ItemList.bin");
+            MonsterDB.Load("Data\\MonsterList.bin");
+            TacticsDB.Load("Data\\Tactics.bin");
+
+            World();
 
             Initialize();
         }
@@ -42,8 +49,6 @@ namespace Digital_World.Systems
         {
             tMain = new Thread(new ParameterizedThreadStart(Observe));
             tMain.IsBackground = true;
-
-            World();
         }
 
         public void Start()
@@ -69,11 +74,10 @@ namespace Digital_World.Systems
             try
             {
                 //Starts listening
-                server.Listen(new ServerInfo(Port, System.Net.IPAddress.Parse(Host)));
+                server.Listen(new ServerInfo(Opt.GameServer.Port, Opt.GameServer.IP));
 
                 //Starts monitoring the client list
                 ThreadPool.QueueUserWorkItem(new WaitCallback(Monitor));
-                ThreadPool.QueueUserWorkItem(new WaitCallback(LifeSupport));
 
                 while (true)
                 {
@@ -98,26 +102,40 @@ namespace Digital_World.Systems
             {
                 while (true)
                 {
-                    lock (Clients)
+                    Client[] temp = Clients.ToArray();
+                    List<Client> toRemove = new List<Client>();
+
+                    for (int i = 0; i < temp.Length; i++)
                     {
-                        List<Client> toRemove = new List<Client>();
-                        foreach (Client client in Clients)
+                        Client client = temp[i];
+                        try
                         {
-                            if (!client.m_socket.Connected)
+                            if (!client.m_socket.Connected &&
+                                !client.m_socket.Poll(1000, System.Net.Sockets.SelectMode.SelectRead | System.Net.Sockets.SelectMode.SelectWrite))
+                            {
                                 toRemove.Add(client);
+                            }
                             else
                             {
                                 SqlDB.SaveTamer(client);
                             }
                         }
-
+                        catch
+                        {
+                            client.Close();
+                            toRemove.Add(client);
+                            continue;
+                        }
+                    }
+                    lock (Clients)
+                    {
                         foreach (Client client in toRemove)
                         {
                             Clients.Remove(client);
                         }
                     }
 
-                    Thread.Sleep(30 * 1000);
+                    Thread.Sleep(1000);
                 }
             }
             catch (ThreadAbortException)
@@ -140,7 +158,16 @@ namespace Digital_World.Systems
 
         void server_OnRead(Client client, byte[] buffer, int length)
         {
-            Process(client, new Packets.PacketReader(buffer));
+            Packets.PacketReader Packet = null;
+            try
+            {
+                Packet = new Packets.PacketReader(buffer);
+            }
+            catch
+            {
+                Console.WriteLine("Packet checksum failed!");
+            }
+            Process(client, Packet);
         }
 
         void server_OnClose(Client client)

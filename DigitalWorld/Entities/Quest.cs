@@ -17,18 +17,19 @@ namespace Digital_World.Entities
 
         public byte[] ToArray()
         {
-            MemoryStream m = new MemoryStream();
+            byte[] buffer = new byte[0];
+            using (MemoryStream m = new MemoryStream())
+            {
 
-            m.Write(BitConverter.GetBytes(QuestId), 0, 2);
-            m.WriteByte(Goal1);
-            m.WriteByte(Goal2);
-            m.WriteByte(Goal3);
-            m.WriteByte(Goal4);
-            m.WriteByte(Goal5);
+                m.Write(BitConverter.GetBytes(QuestId), 0, 2);
+                m.WriteByte(Goal1);
+                m.WriteByte(Goal2);
+                m.WriteByte(Goal3);
+                m.WriteByte(Goal4);
+                m.WriteByte(Goal5);
 
-            byte[] buffer = m.ToArray();
-            m.Close();
-
+                buffer = m.ToArray();
+            }
             return buffer;
         }
     }

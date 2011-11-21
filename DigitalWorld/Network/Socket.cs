@@ -8,7 +8,7 @@ using System.Net;
 
 namespace Digital_World.Network
 {
-    public class SocketWrapper
+    public class SocketWrapper : IDisposable
     {
         public int ListenPort = 0;
 
@@ -287,6 +287,13 @@ namespace Digital_World.Network
                     return false;
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            try { listener.Close(); }
+            catch { }
+            allDone.Dispose();
         }
     }
 }

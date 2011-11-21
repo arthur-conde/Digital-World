@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using Digital_World.Network;
 using System.Collections.ObjectModel;
 using Digital_World.Database;
+using Digital_World.Helpers;
 
 namespace Digital_World
 {
@@ -24,6 +25,7 @@ namespace Digital_World
     {
         private SocketWrapper server = null;
         private ObservableCollection<Client> clients = new ObservableCollection<Client>();
+        private Settings Opt = null;
 
         public MainWindow()
         {
@@ -38,9 +40,17 @@ namespace Digital_World
             //listClients.ItemsSource = clients;
 
             MapDB.Load("Data\\MapList.bin");
+            DigimonDB.Load("Data\\DigimonList.bin");
+
+            Opt = Settings.Deserialize();
 
             Console.WriteLine("This server is configured to route players to the game server at {0}:{1}",
-                Properties.Settings.Default.MapServer, Properties.Settings.Default.MapPort);
+                Opt.GameServer.Host, Opt.GameServer.Port);
+            if (Opt.LobbyServer.AutoStart)
+            {
+                server.Listen(new ServerInfo(Opt.LobbyServer.Port, Opt.LobbyServer.IP));
+                sbInfo1.Content = "Starting Lobby Server...";
+            }
         }
 
         void PacketProcessor(Client client, byte[] buffer, int length)
@@ -71,7 +81,8 @@ namespace Digital_World
         private void mi_Options_Click(object sender, RoutedEventArgs e)
         {
             Options winOpt = new Options();
-            winOpt.ShowDialog();
+            if (winOpt.ShowDialog().Value)
+                Opt = Settings.Deserialize();
         }
 
         private void btnStart_Click(object sender, RoutedEventArgs e)

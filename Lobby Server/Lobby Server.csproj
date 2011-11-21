@@ -96,6 +96,9 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="app.config" />
+    <None Include="Data\DigimonList.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Data\MapList.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -106,6 +109,10 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Auth Server\Auth Server.csproj">
+      <Project>{CB67DEA0-900C-40DE-B659-98CE28D5702E}</Project>
+      <Name>Auth Server</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DigitalWorld\Yggdrasil.csproj">
       <Project>{F26E3C69-CF5A-4218-AC13-410D6B5A9E1D}</Project>
       <Name>Yggdrasil</Name>

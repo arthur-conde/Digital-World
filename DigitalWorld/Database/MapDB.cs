@@ -13,23 +13,28 @@ namespace Digital_World.Database
         public static void Load(string fileName)
         {
             if (MapList.Count > 0) return;
-            BitReader read = new BitReader(File.OpenRead(fileName));
-
-            int count = read.ReadInt();
-            for (int i = 0; i < count; i++)
+            using (Stream s = File.OpenRead(fileName))
             {
-                read.Seek(4 + i*672);
-                MapData map = new MapData();
-                map.MapID = read.ReadInt();
+                using (BitReader read = new BitReader(s))
+                {
 
-                map.MapNumber = read.ReadInt();
-                read.Skip(4);
-                map.Name = read.ReadZString(Encoding.ASCII);
-                read.Skip(672 - (int)(336 + (read.InnerStream.BaseStream.Position - (672 * i)) - 4));
+                    int count = read.ReadInt();
+                    for (int i = 0; i < count; i++)
+                    {
+                        read.Seek(4 + i * 672);
+                        MapData map = new MapData();
+                        map.MapID = read.ReadInt();
 
-                map.DisplayName = read.ReadZString(Encoding.Unicode);
+                        map.MapNumber = read.ReadInt();
+                        read.Skip(4);
+                        map.Name = read.ReadZString(Encoding.ASCII);
+                        read.Skip(672 - (int)(336 + (read.InnerStream.BaseStream.Position - (672 * i)) - 4));
 
-                MapList.Add(map.MapID, map);
+                        map.DisplayName = read.ReadZString(Encoding.Unicode);
+
+                        MapList.Add(map.MapID, map);
+                    }
+                }
             }
             Console.WriteLine("[MapDB] Loaded {0} maps.", MapList.Count);
         }

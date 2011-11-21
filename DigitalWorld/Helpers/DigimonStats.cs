@@ -91,23 +91,23 @@ namespace Digital_World.Helpers
         public byte[] ToArray()
         {
             byte[] buffer = null;
-            MemoryStream m = new MemoryStream();
+            using (MemoryStream m = new MemoryStream())
+            {
+                m.Write(BitConverter.GetBytes(MaxHP), 0, 2);
+                m.Write(BitConverter.GetBytes(MaxDS), 0, 2);
+                m.Write(BitConverter.GetBytes(DE), 0, 2);
+                m.Write(BitConverter.GetBytes(AT), 0, 2);
+                m.Write(BitConverter.GetBytes(HP), 0, 2);
+                m.Write(BitConverter.GetBytes(DS), 0, 2);
+                m.Write(BitConverter.GetBytes(Intimacy), 0, 2);
+                m.Write(BitConverter.GetBytes(HT), 0, 2);
+                m.Write(BitConverter.GetBytes(EV), 0, 2);
+                m.Write(BitConverter.GetBytes(CR), 0, 2);
+                m.Write(BitConverter.GetBytes(MS), 0, 2);
+                m.Write(BitConverter.GetBytes(AS), 0, 2);
 
-            m.Write(BitConverter.GetBytes(MaxHP), 0, 2);
-            m.Write(BitConverter.GetBytes(MaxDS), 0, 2);
-            m.Write(BitConverter.GetBytes(DE), 0, 2);
-            m.Write(BitConverter.GetBytes(AT), 0, 2);
-            m.Write(BitConverter.GetBytes(HP), 0, 2);
-            m.Write(BitConverter.GetBytes(DS), 0, 2);
-            m.Write(BitConverter.GetBytes(Intimacy), 0, 2);
-            m.Write(BitConverter.GetBytes(HT), 0, 2);
-            m.Write(BitConverter.GetBytes(EV), 0, 2);
-            m.Write(BitConverter.GetBytes(CR), 0, 2);
-            m.Write(BitConverter.GetBytes(MS), 0, 2);
-            m.Write(BitConverter.GetBytes(AS), 0, 2);
-
-            buffer = m.ToArray();
-            m.Close();
+                buffer = m.ToArray();
+            }
 
             return buffer;
         }

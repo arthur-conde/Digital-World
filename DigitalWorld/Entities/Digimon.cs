@@ -9,8 +9,11 @@ namespace Digital_World.Entities
 {
     public class Digimon
     {
+        /// <summary>
+        /// The ID of the Digimon in the database
+        /// </summary>
         public uint DigiId = 0;
-        public int intHandle = 0;
+        public uint Model = 0;
         public int CharacterId = 0;
         public string Name = "Genericmon";
         public int Level = 1;
@@ -38,22 +41,31 @@ namespace Digital_World.Entities
             return string.Format("{0}\nLv {1} {2}", Name, Level, Species);
         }
 
-        public int ProperModel()
+        public uint ProperModel()
         {
-            int pModel = 0x3C8C90;
-            int bId = 31001;
-
-            pModel += ((CurrentForm - bId) * 128);
+            uint pModel = 0;
+            pModel += (uint)((CurrentForm * 128) + 16);
             return (pModel << 8);
         }
 
-        public short MapHandle
+        /// <summary>
+        /// The handle to the Digimon entity
+        /// </summary>
+        public short Handle
         {
             get
             {
-                byte[] b = new byte[] { (byte)((intHandle >> 32) & 0xFF), 0x10 };
+                byte[] b = new byte[] { (byte)((Model >> 32) & 0xFF), 0x10 };
                 return BitConverter.ToInt16(b, 0);
             }
-        }       
+        }
+
+        public byte byteHandle
+        {
+            get
+            {
+                return (byte)((Model >> 32) & 0xFF);
+            }
+        }
     }
 }

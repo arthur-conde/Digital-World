@@ -160,30 +160,38 @@ namespace Digital_World.Helpers
 
         public byte[] Serialize()
         {
-            MemoryStream m = new MemoryStream();
-            BinaryFormatter f = new BinaryFormatter();
-            f.Serialize(m, this);
-            byte[] b =  m.ToArray();
-            m.Close();
+            byte[] b = new byte[0];
+            using (MemoryStream m = new MemoryStream())
+            {
+                BinaryFormatter f = new BinaryFormatter();
+                f.Serialize(m, this);
+                b = m.ToArray();
+            }
             return b;
         }
 
         public static ItemList Deserialize(byte[] buffer)
         {
-            BinaryFormatter f = new BinaryFormatter();
-            return (ItemList)f.Deserialize(new MemoryStream(buffer));
+            ItemList itemList = null;
+            using (MemoryStream m = new MemoryStream(buffer))
+            {
+                BinaryFormatter f = new BinaryFormatter();
+                itemList = (ItemList)f.Deserialize(m);
+            }
+            return itemList;
         }
 
         public byte[] ToArray()
         {
-            MemoryStream m = new MemoryStream();
             byte[] buffer = null;
-            for (int i = 0; i < items.Length; i++)
+            using (MemoryStream m = new MemoryStream())
             {
-                m.Write(items[i].ToArray(),0, 24);
+                for (int i = 0; i < items.Length; i++)
+                {
+                    m.Write(items[i].ToArray(), 0, 24);
+                }
+                buffer = m.ToArray();
             }
-            buffer = m.ToArray();
-            m.Close();
             return buffer;
         }
     }

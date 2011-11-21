@@ -37,13 +37,25 @@ namespace Digital_World.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("7012")]
+        [global::System.Configuration.DefaultSettingValueAttribute("7000")]
         public int Port {
             get {
                 return ((int)(this["Port"]));
             }
             set {
                 this["Port"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool Start {
+            get {
+                return ((bool)(this["Start"]));
+            }
+            set {
+                this["Start"] = value;
             }
         }
     }

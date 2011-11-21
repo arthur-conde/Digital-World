@@ -21,6 +21,11 @@ namespace Digital_World.Packets.Game
     /// </summary>
     public class BaseChat:Packet
     {
+        public BaseChat()
+        {
+            packet.Type(1006);
+        }
+
         /// <summary>
         /// Send to speaker
         /// </summary>
@@ -34,6 +39,21 @@ namespace Digital_World.Packets.Game
             packet.WriteString(sender);
             packet.WriteString(message);
             packet.WriteByte(0);
+        }
+
+        /// <summary>
+        /// Send a Shout
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="message"></param>
+        public BaseChat Megaphone(string sender, string message, int itemId)
+        {
+            packet.WriteShort((short)ChatType.Megaphone);
+            packet.WriteString(sender);
+            packet.WriteString(message);
+            packet.WriteInt(itemId);
+
+            return this;
         }
 
         public BaseChat(ChatType chatType, string message)

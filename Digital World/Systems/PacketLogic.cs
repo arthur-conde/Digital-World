@@ -10,6 +10,7 @@ using Digital_World.Helpers;
 using Digital_World.Packets.Game;
 using Digital_World.Packets.Game.Interface;
 using Digital_World.Packets.Game.Chat;
+using Digital_World.Packets.Game.Interface.Hatching;
 
 namespace Digital_World.Systems
 {
@@ -21,6 +22,37 @@ namespace Digital_World.Systems
         static Random Rand = new Random();
 
         /// <summary>
+        /// Server-wide Send to all connected clients.
+        /// </summary>
+        /// <param name="Packet">Packet to Send</param>
+        public void Send(IPacket Packet)
+        {
+            List<Client> remove = new List<Client>();
+            Client[] temp = Clients.ToArray();
+            for (int i = 0; i < temp.Length;i++ )
+            {
+                Client Client = temp[i];
+                try
+                {
+                    Client.Send(Packet);
+                }
+                catch
+                {
+                    remove.Add(Client);
+                }
+            }
+
+            lock (Clients)
+            {
+                foreach (Client Client in remove)
+                {
+                    Client.Close();
+                    Clients.Remove(Client);
+                }
+            }
+        }
+
+        /// <summary>
         /// Process incoming packets
         /// </summary>
         /// <param name="client"></param>
@@ -29,8 +61,14 @@ namespace Digital_World.Systems
         {
             Character Tamer = client.Tamer;
             Digimon ActiveMon = null;
+            GameMap ActiveMap = null;
             if (Tamer != null && Tamer.Partner != null)
+            {
                 ActiveMon = Tamer.Partner;
+                ActiveMap = Maps[client.Tamer.Location.Map];
+            }
+
+            //Console.WriteLine("Processing type {0}", packet.Type);
             switch (packet.Type)
             {
                 case -1:
@@ -41,13 +79,13 @@ namespace Digital_World.Systems
                     }
                 case 1001:
                     {
-                        //Movement speed, map handle
+                        //Movement speed
+                        client.Send(new Packets.Game.UpdateMS(Tamer.TamerHandle, Tamer.DigimonHandle,
+                            (short)Tamer.MS, Tamer.Partner.Stats.MS));
 
                         //Event Item
                         client.Send(new Packets.Game.RewardCountdown(8, new DateTime(1970, 1, 1, 0, 0, 10)));
-
-                        client.Send(new Packets.Game.Status(client.Tamer.DigimonHandle, client.Tamer.Partner.Stats));
-                        //Console.WriteLine("3FF Sent.", packet.Type);
+                        ActiveMap.Spawn(client); 
                         break;
                     }
                 case -3:
@@ -56,6 +94,7 @@ namespace Digital_World.Systems
                     }
                 case 1004:
                     {
+                        //Move
                         int unknown1 = packet.ReadInt();
                         short handle = packet.ReadShort();
                         int X = packet.ReadInt();
@@ -74,10 +113,7 @@ namespace Digital_World.Systems
                             Tamer.Partner.Location.PosY = Y;
                         }
 
-                        Packet p26b2 = new Packets.Game.UpdateMS(
-                            client.Tamer.TamerHandle, client.Tamer.DigimonHandle,
-                            (short)client.Tamer.MS, client.Tamer.Partner.Stats.MS);
-                        client.Send(p26b2);
+                        Maps[Tamer.Location.Map].Send(new MovePlayer(Tamer));
                         break;
                     }
                 case 1008:
@@ -87,12 +123,24 @@ namespace Digital_World.Systems
                         if (text.StartsWith("!"))
                             Command(client, text.Substring(1).Split(' '));
                         else
-                            client.Send(new ChatNormal(Tamer.TamerHandle, text));
+                        {
+                            if (ActiveMap == null)
+                                client.Send(new ChatNormal(Tamer.TamerHandle, text));
+                            else
+                                ActiveMap.Send(new ChatNormal(Tamer.TamerHandle, text));
+                            
+                        }
                         break;
                     }
                 case 1016:
                     {
-                        SqlDB.SaveTamer(client);
+                        short h1 = packet.ReadShort();
+                        short h2 = packet.ReadShort();
+                        if (h1 != Tamer.TamerHandle)
+                        {
+                            SqlDB.SaveTamer(client);
+                            ActiveMap.Send(new DespawnPlayer(Tamer.TamerHandle, Tamer.DigimonHandle));
+                        }
                         //client.m_socket.Close();
                         break;
                     }
@@ -117,8 +165,9 @@ namespace Digital_World.Systems
                             devolve = true;
                         }
 
-                        client.Send(new Evolve(Tamer.DigimonHandle, Tamer.TamerHandle, id, (byte)(devolve ? 5 : 0)));
+                        ActiveMap.Send(new Evolve(Tamer.DigimonHandle, Tamer.TamerHandle, id, (byte)(devolve ? 5 : 0)));
                         mon.CurrentForm = id;
+                        mon.Model = GetModel(mon.ProperModel(), mon.byteHandle);
 
                         DigimonData dData = DigimonDB.GetDigimon(Tamer.Partner.CurrentForm);
                         if (dData != null)
@@ -129,6 +178,98 @@ namespace Digital_World.Systems
                         //Send to nearby players
                         break;
                     }
+                case 1036:
+                    {
+                        int Slot = packet.ReadInt();
+                        int NPC= packet.ReadInt();
+                        TDBTactic egg = TacticsDB.Get(Tamer.Inventory[Slot].BaseID);
+                        if (egg == null)
+                        {
+                            egg = TacticsDB.Get(Tamer.Inventory[Slot].ItemId);
+                        }
+
+                        if (egg != null)
+                        {
+                            Tamer.Incubator = egg.ItemId;
+                            Tamer.IncubatorLevel = 0;
+                            Tamer.Inventory.Remove(Slot);
+                        }
+                        break;
+                    }
+                case 1037:
+                    {
+                        //Data Input
+                        int slot = packet.ReadInt();
+                        TDBTactic egg = TacticsDB.Get(Tamer.Incubator);
+                        int res = Opt.GameServer.HatchRates.Hatch(Tamer.IncubatorLevel);
+                        if (Tamer.Incubator < 10000)
+                            res = 0;
+                        if (res == 0)
+                        {
+                            //Great Success
+                            Tamer.IncubatorLevel++;
+                            if (Tamer.IncubatorLevel < 3)
+                                client.Send(new DataInputSuccess(Tamer.TamerHandle));
+                            else
+                                client.Send(new DataInputSuccess(Tamer.TamerHandle, (byte)Tamer.IncubatorLevel));
+                        }
+                        else if (res == 1)
+                        {
+                            client.Send(new DataInputFailure(Tamer.TamerHandle, false));
+                        }
+                        else
+                        {
+                            Tamer.IncubatorLevel = 0;
+                            Tamer.Incubator = 0;
+                            client.Send(new DataInputFailure(Tamer.TamerHandle, true));
+                        }
+                        if (egg != null)
+                            Tamer.Inventory[slot].Amount -= egg.Data;
+                        break;
+                    }
+                case 1038:
+                    {
+                        //Hatch
+                        packet.ReadByte();
+                        string name = packet.ReadZString();
+                        int NPC = packet.ReadInt();
+                        if (Tamer.IncubatorLevel < 3)
+                            client.Close();
+                        TDBTactic egg = TacticsDB.Get(Tamer.Incubator);
+                        if (egg != null)
+                        {
+                            uint digiId = SqlDB.CreateMercenary(Tamer.CharacterId, name, egg.Species, Tamer.IncubatorLevel, 15000, 0);
+                            if (digiId == 0) return;
+                            Digimon mon = SqlDB.GetDigimon(digiId);
+                            for (int i = 0; i < Tamer.DigimonList.Length; i++)
+                            {
+                                if (Tamer.DigimonList[i] == null)
+                                {
+                                    Tamer.DigimonList[i] = mon;
+                                    client.Send(new Hatch(mon, i));
+                                    break;
+                                }
+                            }
+                            Send(new BroadcastHatch(Tamer.Name, name, egg.Species, 15000, Tamer.IncubatorLevel));
+                            Tamer.IncubatorLevel = 0;
+                            Tamer.Incubator = 0;
+                        }
+                        break;
+                    }
+                case 1039:
+                    {
+                        //Remove Egg.
+                        int NPC = packet.ReadInt();
+                        if (Tamer.IncubatorLevel == 0 && Tamer.Incubator != 0)
+                        {
+                            Item e = new Item();
+                            e.ID = Tamer.Incubator;
+                            e.Amount = 1;
+                            Tamer.Inventory.Add(e);
+                        }
+                        break;
+                    }
+
                 case 1041:
                     {
                         //Mercenary Switch
@@ -137,7 +278,7 @@ namespace Digital_World.Systems
                         Digimon current = Tamer.DigimonList[0];
 
                         client.Send(new UpdateStats(Tamer, target));
-                        client.Send(new DigimonSwitch(Tamer.DigimonHandle, slot, current, target));
+                        ActiveMap.Send(new DigimonSwitch(Tamer.DigimonHandle, slot, current, target));
 
                         Tamer.Partner = target;
 
@@ -147,33 +288,23 @@ namespace Digital_World.Systems
                     }
                 case 1325:
                     {
-                        //Verify if rideable
+                        //Riding Mode
+                        //TODO: Verify if rideable
                         client.Send(new RidingMode(Tamer.TamerHandle, Tamer.DigimonHandle));
                         client.Send(new UpdateMS(Tamer.TamerHandle, Tamer.DigimonHandle, Tamer.Partner.Stats.MS, 1, 1));
                         break;
                     }
                 case 1326:
                     {
+                        //Riding mode
                         client.Send(new StopRideMode(Tamer.TamerHandle, Tamer.DigimonHandle));
                         client.Send(new UpdateMS(Tamer.TamerHandle, Tamer.DigimonHandle, (short)Tamer.MS, Tamer.Partner.Stats.MS));
                         break;
                     }
                 case 1703:
                     {
+                        //Appears at the end of map switching
                         client.Send(packet);
-                        break;
-                    }
-                case 1709:
-                    {
-                        //Map Change
-                        int portalId = packet.ReadInt();
-                        Portal Portal = PortalDB.GetPortal(portalId);
-                        MapData Map = MapDB.GetMap(Portal.MapId);
-                        Tamer.Location = new Position(Portal);
-
-                        SqlDB.SaveTamer(client);
-                        client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port, Portal, Map.Name));
-                        client.Send(new SendHandle(Tamer.TamerHandle));
                         break;
                     }
                 case 1706:
@@ -185,6 +316,9 @@ namespace Digital_World.Systems
 
                         SqlDB.LoadUser(client, acctId, accessCode);
                         SqlDB.LoadTamer(client);
+
+                        if (client.Tamer == null)
+                            client.m_socket.Close();
 
                         lock (Clients) { Clients.Add(client); }
 
@@ -201,6 +335,21 @@ namespace Digital_World.Systems
                         Maps[client.Tamer.Location.Map].Enter(client); //Enter GameMap
                         break;
                     }
+                case 1709:
+                    {
+                        //Map Change
+                        int portalId = packet.ReadInt();
+                        Portal Portal = PortalDB.GetPortal(portalId);
+                        MapData Map = MapDB.GetMap(Portal.MapId);
+
+                        Maps[client.Tamer.Location.Map].Leave(client);
+                        Tamer.Location = new Position(Portal);
+
+                        SqlDB.SaveTamer(client);
+                        client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port, Portal, Map.Name));
+                        client.Send(new SendHandle(Tamer.TamerHandle));
+                        break;
+                    }
                 case 2404:
                     {
                         //FriendList
@@ -214,7 +363,7 @@ namespace Digital_World.Systems
                         {
                             if (Tamer.ArchivedDigimon[i] == 0) continue;
                             Digimon dMon = SqlDB.LoadDigimon(Tamer.ArchivedDigimon[i]);
-                            dMon.intHandle = dMon.ProperModel() + Rand.Next(0, 255);
+                            dMon.Model = GetModel(dMon.ProperModel());
                             ArchivedDigimon.Add(i,dMon);
                         }
                         client.Send(new DigimonArchive(Tamer.ArchiveSize, 40, ArchivedDigimon));
@@ -230,7 +379,7 @@ namespace Digital_World.Systems
                         {
                             //Archive to Digivice
                             Digimon archiveDigimon = SqlDB.LoadDigimon(Tamer.ArchivedDigimon[ArchiveSlot]);
-                            archiveDigimon.intHandle = archiveDigimon.ProperModel() + Rand.Next(0, 255);
+                            archiveDigimon.Model = GetModel(archiveDigimon.ProperModel());
                             Tamer.ArchivedDigimon[ArchiveSlot] = 0;
                             Tamer.DigimonList[Slot] = archiveDigimon;
 
@@ -252,7 +401,7 @@ namespace Digital_World.Systems
 
                             Digimon Mon2 = SqlDB.LoadDigimon(Tamer.ArchivedDigimon[ArchiveSlot]);
                             Tamer.ArchivedDigimon[ArchiveSlot] = Mon1.DigiId;
-                            Mon2.intHandle = Mon2.ProperModel() + Rand.Next(0, 255);
+                            Mon2.Model = GetModel(Mon2.ProperModel());
                             Tamer.DigimonList[Slot] = Mon2;
                         }
                         SqlDB.SaveTamer(client);
@@ -272,10 +421,10 @@ namespace Digital_World.Systems
                             Item iSource = Tamer.Inventory[Slot1];
                             Item iDest = Tamer.Inventory[Slot2];
 
-                            if (iSource.ID == iDest.ID)
+                            if (iSource.ItemId == iDest.ItemId)
                             {
                                 //Combine Stacks
-                                iDest.Count += iSource.Count;
+                                iDest.Amount += iSource.Amount;
                                 Tamer.Inventory.Remove(Slot1);
                             }
                             else
@@ -321,7 +470,7 @@ namespace Digital_World.Systems
                     }
                 case 3907:
                     {
-                        //Split stack
+                        //Split 
                         short sItemToSplit = packet.ReadShort();
                         short sDestination = packet.ReadShort();
                         byte sAmountToSplit = packet.ReadByte();
@@ -331,12 +480,52 @@ namespace Digital_World.Systems
                         Item iNew = new Item(0);
                         iNew.ID = iToSplit.ID;
                         iNew.time_t = iToSplit.time_t;
-                        iNew.Count = sAmountToSplit;
-                        iToSplit.Count -= sAmountToSplit;
+                        iNew.Amount = sAmountToSplit;
+                        iToSplit.Amount -= sAmountToSplit;
+                        if (iToSplit.Amount == 0)
+                        {
+                            Tamer.Inventory.Remove(sItemToSplit);
+                        }
 
                         Tamer.Inventory.Add(iNew);
 
                         client.Send(packet);
+                        break;
+                    }
+                case 3922:
+                    {
+                        //Scan DigiEgg
+                        int NpcId = packet.ReadInt();
+                        byte uByte = packet.ReadByte();
+                        int Slot = packet.ReadInt();
+                        //Check for distance?
+                        break;
+                    }
+                case 3923:
+                    {
+                        //Return DigiEgg
+                        int NpcId = packet.ReadInt();
+                        int Slot = packet.ReadInt();
+                        //Check for NPC distance?
+                        int amount = Tamer.Inventory[Slot].BaseID;
+                        if (90101 <= amount && amount < 90108)
+                        {
+                            if (amount == 90101)
+                            {
+                                amount = 25 * Tamer.Inventory[Slot].Amount;
+                            }
+                            else
+                            {
+                                amount = 100 + (50 * (amount - 90102));
+                            }
+                            Tamer.Money += amount * Math.Max(Tamer.Inventory[Slot].Amount, 1);
+                            Tamer.Inventory.Remove(Slot);
+                            client.Send(new ReturnEggs(amount, Tamer.Money, 0));
+                        }
+                        else
+                        {
+                            client.Close();
+                        }
                         break;
                     }
                 default:
@@ -347,16 +536,35 @@ namespace Digital_World.Systems
             }
         }
 
+        public static uint GetModel(uint Model)
+        {
+            uint hEntity = Model;
+            return (uint)(hEntity + Rand.Next(1, 255));
+        }
+
+        public static uint GetModel(uint Model, byte Id)
+        {
+            uint hEntity = Model;
+            return (uint)(hEntity + Id);
+        }
+
+        public static short GetHandle(uint Model, byte type)
+        {
+            byte[] b = new byte[] { (byte)((Model >> 32) & 0xFF), type };
+            return BitConverter.ToInt16(b, 0);
+        }
+
         public static void MakeHandles(Character Tamer, uint time_t)
         {
             Tamer.intHandle = (uint)(Tamer.ProperModel + Rand.Next(1,255));
 
             for (int i = 0; i < Tamer.DigimonList.Length; i++)
             {
+                if (Tamer.DigimonList[i] == null) continue;
                 Digimon mon = Tamer.DigimonList[i];
-                mon.intHandle = mon.ProperModel() + Rand.Next(1, 255);
+                mon.Model = GetModel(mon.ProperModel());
             }
-            Tamer.DigimonHandle = Tamer.Partner.MapHandle;
+            Tamer.DigimonHandle = Tamer.Partner.Handle;
         }
 
     }

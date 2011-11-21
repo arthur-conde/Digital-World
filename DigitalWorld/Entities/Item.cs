@@ -12,7 +12,7 @@ namespace Digital_World.Entities
 
         public ushort ItemId = 0;
         public ushort Modifier = 0;
-        public short Count = 0;
+        public short Unknown = 0;
         public short Unknown1 = 0;
         public short[] Attributes = new short[2];
         public short Unknown2 = 0;
@@ -22,7 +22,7 @@ namespace Digital_World.Entities
         public short Unknown6 = 0;
         public uint time_t = 0;
 
-        public Item() 
+        public Item()
         {
         }
 
@@ -57,21 +57,24 @@ namespace Digital_World.Entities
 
         public byte[] ToArray()
         {
-            MemoryStream buffer = new MemoryStream();
+            byte[] buffer = new byte[0];
+            using (MemoryStream m = new MemoryStream())
+            {
+                m.Write(BitConverter.GetBytes(ItemId), 0, 2);
+                m.Write(BitConverter.GetBytes(Modifier), 0, 2);
+                m.Write(BitConverter.GetBytes(Unknown), 0, 2);
+                m.Write(BitConverter.GetBytes(Unknown1), 0, 2);
+                m.Write(BitConverter.GetBytes(Attributes[0]), 0, 2);
+                m.Write(BitConverter.GetBytes(Attributes[1]), 0, 2);
+                m.Write(BitConverter.GetBytes(Unknown2), 0, 2);
+                m.Write(BitConverter.GetBytes(Unknown3), 0, 2);
+                m.Write(BitConverter.GetBytes(Unknown4), 0, 2);
+                m.Write(BitConverter.GetBytes(Unknown5), 0, 2);
+                m.Write(BitConverter.GetBytes(time_t), 0, 4);
 
-            buffer.Write(BitConverter.GetBytes(ItemId), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Modifier), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Count), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Unknown1), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Attributes[0]), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Attributes[1]), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Unknown2), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Unknown3), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Unknown4), 0, 2);
-            buffer.Write(BitConverter.GetBytes(Unknown5), 0, 2);
-            buffer.Write(BitConverter.GetBytes(time_t), 0, 4);
-
-            return buffer.ToArray();
+                buffer = m.ToArray();
+            }
+            return buffer;
         }
 
         /// <summary>
@@ -90,6 +93,31 @@ namespace Digital_World.Entities
             }
         }
 
+        public int Amount
+        {
+            get
+            {
+                return ((ItemData.Mod ^ Modifier) / 2);
+            }
+            set
+            {
+                Modifier = (ushort)((value * 2) ^ ItemData.Mod);
+            }
+        }
+
+        public int BaseID
+        {
+            get
+            {
+                return (1<< 16) + ItemId;
+            }
+        }
+
+        public int GetID(int mod)
+        {
+            return (ushort)((mod << 16) + ItemId);
+        }
+
         /// <summary>
         /// Property linked to item database
         /// </summary>
@@ -97,7 +125,12 @@ namespace Digital_World.Entities
         {
             get
             {
-                return ItemDB.GetItem(this.ID);
+                ItemData data = ItemDB.GetItem(this.ID);
+                if (data == null)
+                {
+                    data = ItemDB.GetItem(this.ItemId);
+                }
+                return data;
             }
         }
 

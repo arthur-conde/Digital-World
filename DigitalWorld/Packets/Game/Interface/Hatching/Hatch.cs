@@ -5,34 +5,16 @@ using System.Text;
 using Digital_World.Entities;
 using Digital_World.Helpers;
 
-namespace Digital_World.Packets.Game
+namespace Digital_World.Packets.Game.Interface.Hatching
 {
-    public class DigimonArchive:Packet
+    public class Hatch:Packet
     {
-        public DigimonArchive(int SlotsUnlocked, int TotalSlots)
+        public Hatch(Digimon Mon, int slot)
         {
-            packet.Type(3204);
-            packet.WriteInt(SlotsUnlocked);
-            packet.WriteInt(TotalSlots);
-        }
+            packet.Type(1038);
+            packet.WriteInt(slot);
 
-        public DigimonArchive(int SlotsUnlocked, int TotalSlots, Dictionary<int, Digimon> lDigis)
-        {
-            packet.Type(3204);
-            packet.WriteInt(SlotsUnlocked);
-            foreach (KeyValuePair<int, Digimon> kvp in lDigis)
-            {
-                Digimon Mon = kvp.Value;
-                packet.WriteInt(kvp.Key);
-                Digimon(Mon);
-            }
-            packet.WriteInt(TotalSlots);
-        }
-
-        private void Digimon(Digimon Mon)
-        {
-            packet.WriteInt(Mon.intHandle);
-
+            packet.WriteUInt(Mon.Model);
             packet.WriteString(Mon.Name);
             packet.WriteShort((short)Mon.Size);
             packet.WriteInt(Mon.EXP);
@@ -56,6 +38,8 @@ namespace Digital_World.Packets.Game
 
                 packet.WriteBytes(form.ToArray());
             }
+
+            packet.WriteBytes(new byte[22]);
         }
     }
 }

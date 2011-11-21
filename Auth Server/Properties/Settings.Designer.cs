@@ -25,7 +25,7 @@ namespace Digital_World.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("127.0.0.1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("192.168.1.70")]
         public string Host {
             get {
                 return ((string)(this["Host"]));
@@ -44,6 +44,18 @@ namespace Digital_World.Properties {
             }
             set {
                 this["Port"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool Start {
+            get {
+                return ((bool)(this["Start"]));
+            }
+            set {
+                this["Start"] = value;
             }
         }
     }

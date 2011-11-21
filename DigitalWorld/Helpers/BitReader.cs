@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Digital_World.Helpers
 {
-    public class BitReader
+    public class BitReader : IDisposable
     {
         private BinaryReader m_stream = null;
 
@@ -120,6 +120,33 @@ namespace Digital_World.Helpers
             }
             if (buffer.Count % 2 != 0) buffer.Add(0);
             return encoding.GetString(buffer.ToArray()).Replace("\0", "");
+        }
+
+        public string ReadZString(Encoding encoding, int size)
+        {
+            int nullsEnc = 0;
+            int nullLimit = 1;
+            long Position = m_stream.BaseStream.Position;
+            if (encoding is UnicodeEncoding) nullLimit = 3;
+            List<byte> buffer = new List<byte>();
+            while (nullsEnc < nullLimit)
+            {
+                byte b = m_stream.ReadByte();
+                if (b == 0)
+                    nullsEnc++;
+                else
+                    nullsEnc = 0;
+                buffer.Add(b);
+            }
+            if (m_stream.BaseStream.Position - Position < size)
+                m_stream.ReadBytes((int)(size - (m_stream.BaseStream.Position - Position)));
+            if (buffer.Count % 2 != 0) buffer.Add(0);
+            return encoding.GetString(buffer.ToArray()).Replace("\0", "");
+        }
+
+        public void Dispose()
+        {
+            m_stream.Dispose();
         }
     }
 }

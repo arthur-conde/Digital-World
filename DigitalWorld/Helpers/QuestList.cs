@@ -45,29 +45,38 @@ namespace Digital_World.Helpers
 
         public byte[] Serialize()
         {
-            MemoryStream m = new MemoryStream();
-            f.Serialize(m, this);
-            byte[] buffer = m.ToArray();
-            m.Close();
+            byte[] buffer = new byte[0];
+            using (
+            MemoryStream m = new MemoryStream())
+            {
+                f.Serialize(m, this);
+                buffer = m.ToArray();
+            }
             return buffer;
         }
 
         public static QuestList Deserialize(byte[] buffer)
         {
-            return (QuestList)f.Deserialize(new MemoryStream(buffer));
+            QuestList list = new QuestList();
+            using (MemoryStream m = new MemoryStream(buffer))
+            {
+                list = (QuestList)f.Deserialize(m);
+            }
+            return list;
         }
 
         public byte[] ToArray()
         {
-            MemoryStream m = new MemoryStream();
-            for (int i = 0; i < 20; i++)
+            byte[] buffer = new byte[0];
+            using (MemoryStream m = new MemoryStream())
             {
-                m.Write(list[i].ToArray(), 0, 7);
+                for (int i = 0; i < 20; i++)
+                {
+                    m.Write(list[i].ToArray(), 0, 7);
+                }
+
+                buffer = m.ToArray();
             }
-
-            byte[] buffer = m.ToArray();
-            m.Close();
-
             return buffer;
         }
     }

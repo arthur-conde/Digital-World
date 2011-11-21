@@ -54,5 +54,10 @@ namespace Digital_World.Helpers
                 return MapData.Name;
             }
         }
+
+        internal Position Clone()
+        {
+            return new Position(Map, PosX, PosY);
+        }
     }
 }

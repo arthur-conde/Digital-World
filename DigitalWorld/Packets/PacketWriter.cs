@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Digital_World
 {
-    public class PacketWriter
+    public class PacketWriter : IDisposable
     {
         MemoryStream m_stream;
         byte[] m_buffer;
@@ -92,6 +92,11 @@ namespace Digital_World
             {
                 return (int)m_stream.Length;
             }
+        }
+
+        public void Dispose()
+        {
+            m_stream.Dispose();
         }
     }
 }

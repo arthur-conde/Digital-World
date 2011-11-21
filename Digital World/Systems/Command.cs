@@ -8,43 +8,56 @@ using Digital_World.Helpers;
 using Digital_World.Database;
 using Digital_World.Packets.Game.Interface;
 using Digital_World.Packets.Game.Chat;
+using Digital_World.Packets.Game.Combat;
 
 namespace Digital_World.Systems
 {
     public partial class Yggdrasil
     {
-        public static void Command(Client client, string[] cmd)
+        public void Command(Client client, string[] cmd)
         {
             if (client.AccessLevel <= 0) return;
             if (cmd.Length == 0) return;
             Character Tamer = client.Tamer;
+            GameMap ActiveMap = null;
+            if (Tamer != null && Tamer.Partner != null)
+            {
+                ActiveMap = Maps[client.Tamer.Location.Map];
+            }
             switch (cmd[0])
             {
+                case "inc":
+                    {
+                        client.Send(new ChatNormal(Tamer.DigimonHandle, string.Format("Incubator: Level {1} {0}", Tamer.Incubator, Tamer.IncubatorLevel)));
+                        break;
+                    }
                 case "item":
                     {
                         int fullId = int.Parse(cmd[1]);
                         Item e = new Item(0);
                         e.ID = fullId;
+
                         if (e.ItemData == null)
                         {
                             client.Send(new ChatNormal(Tamer.DigimonHandle, string.Format("An item with the id {0} was not found.", fullId)));
                             return;
                         }
-                        e.Count = 1;
+                        e.Unknown = (short)e.Max;
+                        e.Amount = 1;
                         if (cmd.Length == 3)
                         {
                             int count = 1;
                             int.TryParse(cmd[2], out count);
                             count = count > e.Max ? e.Max : count;
                             count = count < 0 ? 1 : count;
-                            e.Count = (short)count;
+                            e.Amount = count;
                         }
                         if (cmd.Length == 9)
                         {
                             short[] shorts = new short[6];
-                            for (int i = 4; i < cmd.Length; i++)
+                            for (int i = 3; i < cmd.Length; i++)
                             {
-                                shorts[i - 4] = short.Parse(cmd[i]);
+                                shorts[i - 3] = short.Parse(cmd[i]);
                             }
                             e.Unknown1 = shorts[0];
                             e.Unknown2 = shorts[1];
@@ -58,25 +71,66 @@ namespace Digital_World.Systems
                         int slot = Tamer.Inventory.Add(e);
                         if (slot != -1)
                         {
-                            client.Send(new CashWHItem(slot, e, e.Count, e.Max));
+                            client.Send(new CashWHItem(slot, e, ((e.Modifier ^ 1) / 2), e.Max));
                         }
                         break;
                     }
-                case "test":
+                case "sk1":
                     {
-                        int value = 0;
-                        int.TryParse(cmd[1], out value);
-                        uint id = (uint)(0x29A9C000 + Rand.Next(0, 255) + ((value * 0x80) << 8));
-                        GameMap cMap = Maps[Tamer.Location.Map];
-                        cMap.Send(new SpawnObject(
-                            16442, Tamer.Location.PosX, Tamer.Location.PosY,
-                            Tamer.Location.PosX, Tamer.Location.PosY, id, Tamer.Location.PosX, Tamer.Location.PosY,
-                            Tamer.DigimonHandle, Tamer.Partner.Location.PosX, Tamer.Partner.Location.PosY
-                            ));
+                        Client Target = ActiveMap.Find(cmd[1]);
+                        if (Target == null) return;
+                        short skill = 0; short.TryParse(cmd[2], out skill);
+                        client.Send(new UseSkill(Tamer.DigimonHandle,Target.Tamer.DigimonHandle, skill, 1, 9999));
                         break;
                     }
+                case "hatch":
+                        {
+                            int fullId = 31001;
+                            int.TryParse(cmd[1], out fullId);
+                            Send(new BroadcastHatch(Tamer.Name, "I am a banana", fullId, 65000, 5));
+                            break;
+                        }
+                case "sk2":
+                    {
+                        short skill = 0; short.TryParse(cmd[1], out skill);
+                        client.Send(new UseSkill(Tamer.DigimonHandle, Tamer.TamerHandle, skill, 1, 9999));
+                        break;
+                    }
+                case "list":
+                    {
+                        client.Send(new BaseChat(ChatType.Normal, Tamer.DigimonHandle, "Players on this map:"));
+                        foreach (Client other in ActiveMap.Tamers)
+                        {
+                            client.Send(new BaseChat(ChatType.Normal, Tamer.DigimonHandle, string.Format("{0} - {1}", other.Tamer, other.Tamer.Partner)));
+                        }
+                        break;
+                    }
+                case "force":
+                    {
+                        foreach (Client other in ActiveMap.Tamers)
+                        {
+                            ActiveMap.Spawn(other);
+                        }
+                        break;
+                    }
+                case "spawn":
+                    {
+                        uint value = 0;
+                        uint.TryParse(cmd[1], out value);
+                        MDBDigimon Mob = MonsterDB.GetDigimon(value);
+                        if (Mob == null)
+                        {
+                            client.Send(new BaseChat(ChatType.Normal, Tamer.DigimonHandle, string.Format("Mob {0} was not found.", value)));
+                        }
+                        uint id = GetModel((uint)(64 + (Mob.Models[0] * 128)) << 8);
+                        GameMap cMap = Maps[Tamer.Location.Map];
+                        cMap.Send(new SpawnObject(id, Tamer.Location.PosX, Tamer.Location.PosY));
+                        break;
+                    }
+                case "rld":
                 case "reload":
                     {
+                        ActiveMap.Leave(client); 
                         client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port,
                             Tamer.Location.Map, Tamer.Location.PosX, Tamer.Location.PosY, Tamer.Location.MapName));
                         break;
@@ -89,8 +143,7 @@ namespace Digital_World.Systems
                     };
                 case "ann":
                     {
-                        client.Send(new BaseChat((ChatType)262, "ADMIN", string.Join(" ", cmd, 1, cmd.Length - 1)));
-                        SqlDB.SaveTamer(client);
+                        Send(new BaseChat().Megaphone(Tamer.Name, string.Join(" ", cmd, 1, cmd.Length - 1), 402417));
                         break;
                     };
                 case "map":
@@ -117,6 +170,8 @@ namespace Digital_World.Systems
                         if (p != null)
                         {
                             SqlDB.SaveTamerPosition(client);
+
+                            ActiveMap.Leave(client); 
                             Tamer.Location = p;
                             client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port, p.Map, p.PosX, p.PosY, p.MapName));
                         }
@@ -150,8 +205,8 @@ namespace Digital_World.Systems
                         DigimonData dData = DigimonDB.GetDigimon(value);
                         if (dData == null)
                             return;
-                        int digiId = SqlDB.CreateMercenary((int)client.Tamer.CharacterId, cmd[1], value, 5, 14000);
-                        if (digiId == -1)
+                        uint digiId = SqlDB.CreateMercenary(client.Tamer.CharacterId, cmd[1], value, 5, 14000, 100);
+                        if (digiId == 0)
                         {
                             client.Send(new ChatNormal(Tamer.DigimonHandle, "Failed to create mercenary."));
                             return;
@@ -177,7 +232,9 @@ namespace Digital_World.Systems
                         {
                             case "level":
                             case "lv":
-                                Tamer.Level = value; break;
+                                Tamer.Level = value;
+                                ActiveMap.Send(new UpdateLevel(Tamer.TamerHandle, (byte)value));
+                                break;
                             case "at":
                                 Tamer.AT = value; break;
                             case "de":
@@ -200,6 +257,13 @@ namespace Digital_World.Systems
                                 Tamer.InventorySize = value; break;
                             case "storage":
                                 Tamer.StorageSize = value; break;
+                            case "size":
+                                ActiveMap.Send(new ChangeSize(Tamer.TamerHandle, value, 0));
+                                break;
+                            case "bits":
+                                Tamer.Money = value;
+                                //client.Send(new UpdateMoney());
+                                break;
                         }
                         client.Send(new UpdateStats(Tamer, Tamer.Partner));
                         break;
@@ -238,6 +302,10 @@ namespace Digital_World.Systems
                             case "lv":
                             case "level":
                                 Tamer.Partner.Level = value;
+                                ActiveMap.Send(new UpdateLevel(Tamer.DigimonHandle, (byte)value));
+                                break;
+                            case "exp":
+                                Tamer.Partner.EXP = value;
                                 break;
                             case "hp":
                                 Tamer.Partner.Stats.MaxHP = (short)value;
@@ -271,7 +339,7 @@ namespace Digital_World.Systems
                                 Tamer.Partner.Name = cmd[2]; break;
                             case "size":
                                 Tamer.Partner.Size = (short)value;
-                                client.Send(new ChangeSize(Tamer.DigimonHandle, value, 0));
+                                ActiveMap.Send(new ChangeSize(Tamer.DigimonHandle, value, 0));
                                 break;
                             case "scale":
                                 Tamer.Partner.Scale = (byte)value; break;

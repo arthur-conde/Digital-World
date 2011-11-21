@@ -14,30 +14,35 @@ namespace Digital_World.Database
         public static void Load(string fileName)
         {
             if (PortalList.Count > 0) return;
-            BitReader read = new BitReader(File.OpenRead(fileName));
-
-            int count = read.ReadInt();
-            for (int i = 0; i < count; i++)
+            using (Stream s = File.OpenRead(fileName))
             {
-                PortalCluster Cluster = new PortalCluster();
-                Cluster.Count = read.ReadInt();
-
-                for (int h = 0; h < Cluster.Count; h++)
+                using (BitReader read = new BitReader(s))
                 {
-                    Portal portal = new Portal();
-                    portal.PortalId = read.ReadInt();
 
-                    for (int j = 0; j < portal.uInts1.Length; j++)
-                        portal.uInts1[j] = read.ReadInt();
+                    int count = read.ReadInt();
+                    for (int i = 0; i < count; i++)
+                    {
+                        PortalCluster Cluster = new PortalCluster();
+                        Cluster.Count = read.ReadInt();
 
-                    portal.MapId = read.ReadInt();
+                        for (int h = 0; h < Cluster.Count; h++)
+                        {
+                            Portal portal = new Portal();
+                            portal.PortalId = read.ReadInt();
 
-                    for (int j = 0; j < portal.uInts2.Length; j++)
-                        portal.uInts2[j] = read.ReadInt();
+                            for (int j = 0; j < portal.uInts1.Length; j++)
+                                portal.uInts1[j] = read.ReadInt();
 
-                    Cluster.Add(portal);
+                            portal.MapId = read.ReadInt();
+
+                            for (int j = 0; j < portal.uInts2.Length; j++)
+                                portal.uInts2[j] = read.ReadInt();
+
+                            Cluster.Add(portal);
+                        }
+                        PortalList.Add(Cluster);
+                    }
                 }
-                PortalList.Add(Cluster);
             }
             Console.WriteLine("[PortalDB] Loaded {0} portals", PortalList.Count);
         }
@@ -71,7 +76,7 @@ namespace Digital_World.Database
                 if (PortalList.ContainsKey(portalId))
                     return PortalList[portalId];
                 else
-                    throw new Exception(string.Format("Portal with {0} not found.", portalId));
+                    return null;
             }
         }
     }

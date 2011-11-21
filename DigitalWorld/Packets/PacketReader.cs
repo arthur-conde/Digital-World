@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Digital_World.Packets
 {
-    public class PacketReader
+    public class PacketReader : IDisposable
     {
         private MemoryStream packet;
         private int length = 0;
@@ -17,6 +17,18 @@ namespace Digital_World.Packets
             packet = new MemoryStream(buffer);
             length = ReadShort();
             type = ReadShort();
+
+            packet.Seek(length - 2,SeekOrigin.Begin);
+            int checksum = ReadShort();
+            if (checksum != (length ^ 6716))
+            {
+                throw new Exception("Invalid packet checksum");
+            }
+            else if (buffer.Length > length)
+            {
+                Console.WriteLine("WARNING: This packet may contain other data.");
+            }
+            packet.Seek(4, SeekOrigin.Begin);
         }
 
         /// <summary>
@@ -131,6 +143,12 @@ namespace Digital_World.Packets
         public byte[] ToArray()
         {
             return packet.ToArray();
+        }
+
+        public void Dispose()
+        {
+            packet.Close();
+            packet.Dispose();
         }
     }
 }

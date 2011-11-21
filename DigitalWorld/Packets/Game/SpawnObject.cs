@@ -36,5 +36,23 @@ namespace Digital_World.Packets.Game
 
             packet.WriteByte(0);
         }
+
+        public SpawnObject(uint Model, int X, int Y)
+        {
+            packet.Type(1006);
+
+            packet.WriteShort(259);
+            packet.WriteByte(0);
+            packet.WriteInt(X);
+            packet.WriteInt(Y);
+            packet.WriteUInt(Model);
+            packet.WriteInt(X);
+            packet.WriteInt(Y);
+            packet.WriteByte(0xff);
+            packet.WriteShort(99);
+            packet.WriteShort(0);
+            packet.WriteShort(0);
+            //packet.WriteByte(0);
+        }
     }
 }

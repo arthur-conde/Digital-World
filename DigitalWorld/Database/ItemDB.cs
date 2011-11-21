@@ -13,40 +13,42 @@ namespace Digital_World.Database
         public static void Load(string fileName)
         {
             if (Items.Count > 0) return;
-            BitReader read = new BitReader(File.OpenRead(fileName));
-
-            int count = read.ReadInt();
-            for (int i = 0; i < count; i++)
+            using (BitReader read = new BitReader(File.OpenRead(fileName)))
             {
-                read.Seek(4 + i * 940);
 
-                ItemData iData = new ItemData();
-                iData.ItemId = read.ReadInt();
-                iData.Name = read.ReadZString(Encoding.Unicode);
+                int count = read.ReadInt();
+                for (int i = 0; i < count; i++)
+                {
+                    read.Seek(4 + i * 940);
 
-                read.Seek(4 + 132 + i * 940);
-                iData.uInt1 = read.ReadInt();
-                iData.Desc = read.ReadZString(Encoding.Unicode);
+                    ItemData iData = new ItemData();
+                    iData.ItemId = read.ReadInt();
+                    iData.Name = read.ReadZString(Encoding.Unicode);
 
-                read.Seek(4 + 520 + i * 940);
-                iData.Icon = read.ReadZString(Encoding.ASCII);
+                    read.Seek(4 + 132 + i * 940);
+                    iData.uInt1 = read.ReadInt();
+                    iData.Desc = read.ReadZString(Encoding.Unicode);
 
-                read.Seek(4 + 584 + i * 940);
-                iData.ItemType = read.ReadShort();
-                iData.Kind = read.ReadZString(Encoding.Unicode);
+                    read.Seek(4 + 520 + i * 940);
+                    iData.Icon = read.ReadZString(Encoding.ASCII);
 
-                read.Seek(4 + 714 + i * 940);
+                    read.Seek(4 + 584 + i * 940);
+                    iData.ItemType = read.ReadShort();
+                    iData.Kind = read.ReadZString(Encoding.Unicode);
 
-                for (int j = 0; j < iData.uShorts1.Length; j++)
-                    iData.uShorts1[j] = read.ReadShort();
-                iData.Stack = read.ReadShort();
-                for (int j = 0; j < iData.uShorts2.Length; j++)
-                    iData.uShorts2[j] = read.ReadShort();
+                    read.Seek(4 + 714 + i * 940);
 
-                iData.Buy = read.ReadInt();
-                iData.Sell = read.ReadInt();
+                    for (int j = 0; j < iData.uShorts1.Length; j++)
+                        iData.uShorts1[j] = read.ReadShort();
+                    iData.Stack = read.ReadShort();
+                    for (int j = 0; j < iData.uShorts2.Length; j++)
+                        iData.uShorts2[j] = read.ReadShort();
 
-                Items.Add(iData.ItemId, iData);
+                    iData.Buy = read.ReadInt();
+                    iData.Sell = read.ReadInt();
+
+                    Items.Add(iData.ItemId, iData);
+                }
             }
             Console.WriteLine("[ItemDB] Loaded {0} items.", Items.Count);
         }
@@ -64,11 +66,27 @@ namespace Digital_World.Database
             }
             return iData;
         }
+
+        public static ItemData GetItem(ushort shortId)
+        {
+            ItemData iData = null;
+            foreach (KeyValuePair<int, ItemData> kvp in Items)
+            {
+                if (kvp.Value.itemId == shortId)
+                {
+                    iData = kvp.Value;
+                    break;
+                }
+            }
+            return iData;
+        }
     }
 
     public class ItemData
     {
-        public int ItemId;
+        
+        public ushort itemId;
+        public ushort Mod;
         public string Name;
         public int uInt1;
         public string Desc;
@@ -84,6 +102,19 @@ namespace Digital_World.Database
         {
             uShorts1 = new short[8];
             uShorts2 = new short[12];
+        }
+
+        public int ItemId
+        {
+            get
+            {
+                return (Mod << 16) + itemId;
+            }
+            set
+            {
+                Mod = (ushort)(value >> 16);
+                itemId = (ushort)(value & 0xffff);
+            }
         }
     }
 }

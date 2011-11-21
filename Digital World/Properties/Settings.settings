@@ -6,7 +6,10 @@
       <Value Profile="(Default)">192.168.1.70</Value>
     </Setting>
     <Setting Name="Port" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">7012</Value>
+      <Value Profile="(Default)">7000</Value>
+    </Setting>
+    <Setting Name="Start" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

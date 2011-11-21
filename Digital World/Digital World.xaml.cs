@@ -25,9 +25,11 @@ namespace Digital_World
     public partial class MainWindow : Window
     {
         private Yggdrasil Yggdrasil;
+
         public MainWindow()
         {
             InitializeComponent();
+
 
             Logger lLog = new Logger(tLog);
             Yggdrasil = new Yggdrasil();
@@ -56,11 +58,72 @@ namespace Digital_World
             {
                 case "test":
                     {
-                        ItemDB.Load("Data\\ItemList.bin");
+                        TacticsDB.Load("Data\\Tactics.bin");
                         break;
                     }
-                case "find":
+                case "settings":
                     {
+                        Settings s = new Settings();
+                        s.Serialize("Settings.xml");
+                        break;
+                    }
+                case "hatch":
+                    {
+                        Settings s = new Settings();
+                        int[][] Rate = new int[5][] { new int[3], new int[3], new int[3], new int[3], new int[3] };
+                        Random r = new Random();
+                        for (int i = 0; i < 1000; i++ )
+                        {
+                            int Level = r.Next(0, 5);
+                            int res = (int)s.GameServer.HatchRates.Hatch(Level);
+                            Rate[Level][res]++;
+                        }
+                        Console.WriteLine("Level 1: {0} succeeded, {1} failed, {2} broke, {3} total", 
+                            Rate[0][0], Rate[0][1], Rate[0][2], 
+                            Rate[0][0] + Rate[0][1] + Rate[0][2]);
+                        Console.WriteLine("Level 2: {0} succeeded, {1} failed, {2} broke, {3} total",
+                            Rate[1][0], Rate[1][1], Rate[1][2],
+                            Rate[1][0] + Rate[1][1] + Rate[1][2]);
+                        Console.WriteLine("Level 3: {0} succeeded, {1} failed, {2} broke, {3} total",
+                            Rate[2][0], Rate[2][1], Rate[2][2],
+                            Rate[2][0] + Rate[2][1] + Rate[2][2]);
+                        Console.WriteLine("Level 4: {0} succeeded, {1} failed, {2} broke, {3} total",
+                            Rate[3][0], Rate[3][1], Rate[3][2],
+                            Rate[3][0] + Rate[3][1] + Rate[3][2]);
+                        Console.WriteLine("Level 5: {0} succeeded, {1} failed, {2} broke, {3} total",
+                            Rate[4][0], Rate[4][1], Rate[4][2],
+                            Rate[4][0] + Rate[4][1] + Rate[4][2]);
+                        break;
+                    }
+                case "hatch2":
+                    {
+                        Settings s = new Settings();
+                        int[] total = new int[6];
+                        int eggs = 100;
+                        if (cmd.Length >= 2)
+                            int.TryParse(cmd[1], out eggs);
+                        for (int i = 0; i < eggs; i++)
+                        {
+                            int level = 0;
+                            while (level != 5)
+                            {
+                                int res = (int)s.GameServer.HatchRates.Hatch(level);
+                                if (res == 0)
+                                    level++;
+                                else if (res == -1)
+                                    continue;
+                                else
+                                    break;
+                            }
+                            total[level]++;
+                        
+                        }
+                        Console.WriteLine("No Inp. - {0} = {1}", total[0], total[0] / (float)eggs);
+                        Console.WriteLine("Level 1 - {0} = {1}", total[1], total[1] / (float)eggs);
+                        Console.WriteLine("Level 2 - {0} = {1}", total[2], total[2] / (float)eggs);
+                        Console.WriteLine("Level 3 - {0} = {1}", total[3], total[3] / (float)eggs);
+                        Console.WriteLine("Level 4 - {0} = {1}", total[4], total[4] / (float)eggs);
+                        Console.WriteLine("Level 5 - {0} = {1}", total[5], total[5] / (float)eggs);
                         break;
                     }
                 default:

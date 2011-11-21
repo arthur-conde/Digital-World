@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using System.Diagnostics;
 using Digital_World.Network;
 using Digital_World.Packets;
+using Digital_World.Helpers;
 
 namespace Digital_World
 {
@@ -24,6 +25,7 @@ namespace Digital_World
     {
         SocketWrapper server;
         List<Client> clients = new List<Client>();
+        Settings sSettings;
 
         public MainWindow()
         {
@@ -35,92 +37,19 @@ namespace Digital_World
             server.OnClose += new SocketWrapper.dlgClose(server_OnClose);
 
             Logger _writer = new Logger(tLog);
+
+            sSettings = Settings.Deserialize("Settings.xml");
+            if (sSettings.AuthServer.AutoStart)
+            {
+                ServerInfo info = new ServerInfo(sSettings.AuthServer.Port, sSettings.AuthServer.IP);
+                server.Listen(info);
+            }
         }
 
         void m_auth_OnRead(Client client, byte[] buffer, int length)
         {
             //TODO: Packet Response Logic
-            int type = BitConverter.ToInt16(buffer, 2);
-            switch (type)
-            {
-                case -1:
-                    {
-                        /*
-                        PacketWriter resp = new PacketWriter();
-                        resp.Type(-2);
-                        resp.WriteBytes(new byte[] { 0xcf, 0xa6, 0x8f, 0xd8, 0xb4, 0x4e });
-                         * */
-                        PacketReader packet = new PacketReader(buffer);
-                        Console.WriteLine("Accepted connection: {0}", client.m_socket.RemoteEndPoint);
-                        Console.WriteLine("Received FFFF: \n{0}", packet.ToString());
-
-                        packet.Skip(8);
-                        ushort u1 = (ushort)packet.ReadShort();
-                        ushort u2 = (ushort)packet.ReadShort();
-
-                        client.Send(new Packets.PacketFFEF((short)(client.handshake ^ 0x7e41)));
-                        break;
-                    }
-                case 3301:
-                    {
-                        //Login information
-                        string user = Encoding.ASCII.GetString(buffer, 13, buffer[12]);
-                        string pass = Encoding.ASCII.GetString(buffer, 15 + buffer[12], buffer[buffer[12] + 14]);
-
-                        Console.WriteLine("Receiving login request: {0}", user);
-#if CREATE
-                        Database.CreateUser(user, pass);
-                        Console.WriteLine("Creating user {0}...", user);
-#else
-                        int success = SqlDB.Validate(client, user, pass);
-                        switch(success)
-                        {
-                            case -1:
-                                //Banned or non-existent
-                                Console.WriteLine("Banned or nonexistent login: {0}", user);
-                                client.Send(new Packets.Auth.LoginMessage(string.Format("This username has been banned.")));
-                                break;
-                            case -2:
-                                //Wrong Pass;
-                                Console.Write("Incorrect password: {0}", user);
-                                client.Send(new Packets.Auth.LoginMessage("The password provided does not match."));
-                                break;
-                            case -3:
-                                client.Send(new Packets.Auth.LoginMessage("This username does not exist."));
-                                break;
-                            default:
-                                //Normal Login
-                                Console.WriteLine("Successful login: {0}\n Sending Server List", user);
-                                client.Send(new Packets.Auth.ServerList(SqlDB.GetServers(), user, client.Characters));
-                                break;
-                        }
-#endif
-                        break;
-                    }
-                case 1702:
-                    {
-                        //Requesting IP of Server
-                        int serverID = BitConverter.ToInt32(buffer, 4);
-                        KeyValuePair<int, string> server = SqlDB.GetServer(serverID);
-                        SqlDB.LoadUser(client);
-                        Packets.Auth.ServerIP packet = new Packets.Auth.ServerIP(server.Value, server.Key, client.AccountID, client.UniqueID);
-                        client.Send(packet);
-                        break;
-                    }
-                case 0x6A5:
-                    {
-                        client.Send(new Packets.Auth.ServerList(SqlDB.GetServers(), client.Username, client.Characters));
-                        break;
-                    }
-                case -3:
-                    break;
-                default:
-                    {
-                        Console.WriteLine("Unknown Packet ID: {0}", type);
-                        Console.WriteLine(Packet.Visualize(buffer));
-                        break;
-                    }
-            }
+            PacketLogic.Process(client, buffer);
         }
 
         void m_auth_OnAccept(Client state)
@@ -161,7 +90,8 @@ namespace Digital_World
         private void mi_opt_Click(object sender, RoutedEventArgs e)
         {
             Options winOpt = new Options();
-            winOpt.ShowDialog();
+            if (winOpt.ShowDialog().Value)
+                sSettings = Settings.Deserialize("Settings.xml");
         }
     }
 }

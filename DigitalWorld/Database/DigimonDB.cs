@@ -14,40 +14,45 @@ namespace Digital_World.Database
         public static void Load(string fileName)
         {
             if (Digimon.Count > 0) return;
-            BitReader read = new BitReader(File.OpenRead(fileName));
-
-            int count = read.ReadInt();
-            for (int i = 0; i < count; i++)
+            using (Stream s = File.OpenRead(fileName))
             {
-                read.Seek(4 + i * 408);
+                using (BitReader read = new BitReader(s))
+                {
 
-                DigimonData digiData = new DigimonData();
-                digiData.Species = read.ReadInt();
-                read.Skip(4);
-                digiData.DisplayName = read.ReadZString(Encoding.Unicode);
+                    int count = read.ReadInt();
+                    for (int i = 0; i < count; i++)
+                    {
+                        read.Seek(4 + i * 408);
 
-                read.Seek(4 + 136 + i * 408);
-                digiData.Name = read.ReadZString(Encoding.ASCII);
+                        DigimonData digiData = new DigimonData();
+                        digiData.Species = read.ReadInt();
+                        read.Skip(4);
+                        digiData.DisplayName = read.ReadZString(Encoding.Unicode);
 
-                read.Seek(4 + 228 + i * 408);
-                digiData.HP = read.ReadShort();
-                digiData.DS = read.ReadShort();
-                
-                digiData.DE = read.ReadShort();
-                digiData.EV = read.ReadShort();
-                digiData.MS = read.ReadShort();
-                digiData.CR = read.ReadShort();
-                digiData.AT = read.ReadShort();
-                digiData.AS = read.ReadShort();
-                digiData.uStat = read.ReadShort();
-                digiData.HT = read.ReadShort();
-                digiData.uShort1 = read.ReadShort();
+                        read.Seek(4 + 136 + i * 408);
+                        digiData.Name = read.ReadZString(Encoding.ASCII);
 
-                digiData.Skill1 = read.ReadShort();
-                digiData.Skill2 = read.ReadShort();
-                digiData.Skill3 = read.ReadShort();
+                        read.Seek(4 + 228 + i * 408);
+                        digiData.HP = read.ReadShort();
+                        digiData.DS = read.ReadShort();
 
-                Digimon.Add(digiData.Species, digiData);
+                        digiData.DE = read.ReadShort();
+                        digiData.EV = read.ReadShort();
+                        digiData.MS = read.ReadShort();
+                        digiData.CR = read.ReadShort();
+                        digiData.AT = read.ReadShort();
+                        digiData.AS = read.ReadShort();
+                        digiData.uStat = read.ReadShort();
+                        digiData.HT = read.ReadShort();
+                        digiData.uShort1 = read.ReadShort();
+
+                        digiData.Skill1 = read.ReadShort();
+                        digiData.Skill2 = read.ReadShort();
+                        digiData.Skill3 = read.ReadShort();
+
+                        Digimon.Add(digiData.Species, digiData);
+                    }
+                }
             }
             Console.WriteLine("[DigimonDB] Loaded {0} digimon.", Digimon.Count);
         }

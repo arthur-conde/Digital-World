@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Digital_World.Helpers;
 
 namespace Digital_World
 {
@@ -18,31 +19,36 @@ namespace Digital_World
     /// </summary>
     public partial class Options : Window
     {
+        private Settings mySettings;
+
         public Options()
         {
             InitializeComponent();
+            mySettings = Settings.Deserialize();
 
-            tHost.Text = Properties.Settings.Default.Host;
-            tPort.Text = Properties.Settings.Default.Port.ToString();
-            tMHost.Text = Properties.Settings.Default.MapServer;
-            tMPort.Text = Properties.Settings.Default.MapPort.ToString();
+            tHost.Text = mySettings.LobbyServer.Host;
+            tPort.Text = mySettings.LobbyServer.Port.ToString();
+            tMHost.Text = mySettings.GameServer.Host;
+            tMPort.Text = mySettings.GameServer.Port.ToString();
+            chkStart.IsChecked = new bool?(mySettings.LobbyServer.AutoStart);
         }
 
         private void btnOK_Click(object sender, RoutedEventArgs e)
         {
-            Properties.Settings.Default.Host = tHost.Text;
-            Properties.Settings.Default.MapServer = tMHost.Text;
+            mySettings.LobbyServer.Host = tHost.Text;
+            mySettings.GameServer.Host = tHost.Text;
+            mySettings.LobbyServer.AutoStart = chkStart.IsChecked.Value;
             try
             {
-                Properties.Settings.Default.Port = int.Parse(tPort.Text);
-                Properties.Settings.Default.MapPort = int.Parse(tMPort.Text);
+                mySettings.LobbyServer.Port = int.Parse(tPort.Text);
+                mySettings.GameServer.Port = int.Parse(tMPort.Text);
             }
             catch (FormatException)
             {
-                Properties.Settings.Default.Port = 6999;
-                Properties.Settings.Default.MapPort = 7012;
+                mySettings.LobbyServer.Port = 6999;
+                mySettings.GameServer.Port = 7012;
             }
-            Properties.Settings.Default.Save();
+            mySettings.Serialize();
 
             this.DialogResult = new bool?(true);
         }

@@ -61,13 +61,25 @@ namespace Digital_World.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("7012")]
+        [global::System.Configuration.DefaultSettingValueAttribute("7000")]
         public int MapPort {
             get {
                 return ((int)(this["MapPort"]));
             }
             set {
                 this["MapPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool Start {
+            get {
+                return ((bool)(this["Start"]));
+            }
+            set {
+                this["Start"] = value;
             }
         }
     }

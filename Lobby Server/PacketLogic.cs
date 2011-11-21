@@ -20,13 +20,14 @@ namespace Digital_World
                         client.Send(new Packets.PacketFFEF((short)(client.handshake ^ 0x7e41)));
                         break;
                     }
+                case -3:
+                    { break; }
                 case 1706:
                     {
                         //request characters?
                         uint AcctId = BitConverter.ToUInt32(buffer, 8);
                         int UniId = BitConverter.ToInt32(buffer, 12);
 
-                        
 
                         packet.Skip(4);
                         uint tAcct = packet.ReadUInt();
@@ -55,7 +56,6 @@ namespace Digital_World
                 case 1303:
                     {
                         //Create Character
-                        Console.WriteLine("Character Create Packet: \n{0}",packet.ToString());
                         int position = packet.ReadByte();
                         int model = packet.ReadInt();
                         string name = packet.ReadZString();
@@ -63,8 +63,10 @@ namespace Digital_World
                         int digiModel = packet.ReadInt();
                         string digiName = packet.ReadZString();
 
+                        Console.WriteLine("CreateChar {0} {1}", (CharacterModel)model, name);
+
                         int charId = SqlDB.CreateCharacter(client.AccountID, position, model, name, digiModel);
-                        int digiId = SqlDB.CreateDigimon(charId, digiName, digiModel);
+                        int digiId = (int)SqlDB.CreateDigimon((uint)charId, digiName, digiModel);
                         SqlDB.SetPartner(charId, digiId);
                         SqlDB.SetTamer(charId, digiId);
 

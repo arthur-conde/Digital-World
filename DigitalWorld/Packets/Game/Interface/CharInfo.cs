@@ -44,8 +44,8 @@ namespace Digital_World.Packets.Game
             packet.WriteBytes(new byte[384]); //Unknown.
 
             packet.WriteBytes(Tamer.Quests.ToArray());
-            packet.WriteInt(0);
-            packet.WriteInt(0);
+            packet.WriteInt(Tamer.Incubator);
+            packet.WriteInt(Tamer.IncubatorLevel);
 
             Digimon(Tamer.Partner);
 
@@ -90,7 +90,7 @@ namespace Digital_World.Packets.Game
 
         private void Digimon(Digimon Mon)
         {
-            packet.WriteInt(Mon.intHandle);
+            packet.WriteUInt(Mon.Model);
 
             packet.WriteString(Mon.Name);
             packet.WriteByte((byte)Mon.Scale);
