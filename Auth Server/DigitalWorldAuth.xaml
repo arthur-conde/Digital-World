@@ -1,4 +1,4 @@
-﻿<Window x:Class="Digital_World.MainWindow"
+﻿<Window x:Class="Digital_World.AuthMainWin"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Digital World Auth Server" Height="334" Width="821">

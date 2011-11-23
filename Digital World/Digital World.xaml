@@ -1,4 +1,4 @@
-﻿<Window x:Class="Digital_World.MainWindow"
+﻿<Window x:Class="Digital_World.DWMain_Win"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="The Digital World" Height="420" Width="964">

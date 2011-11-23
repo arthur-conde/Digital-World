@@ -12,20 +12,29 @@ namespace Digital_World
     /// </summary>
     public partial class SqlDB
     {
-        private static string db_host = "localhost";
-        private static string db_user = "dmouser";
-        private static string db_pass = "shikifuuin";
-        private static string db_schema = "dmo";
+        private static string db_host = "";
+        private static string db_user = "";
+        private static string db_pass = "";
+        private static string db_schema = "";
+
         private static MySqlConnection m_con;
         private static MySqlConnection Connection
         {
             get
             {
-                if (m_con.State != ConnectionState.Open)
+                if (m_con == null || m_con.State != ConnectionState.Open || m_con.Database == "")
                     m_con = Connect();
                 return m_con;
             }
             set { m_con = value; }
+        }
+
+        public static void SetInfo(string host, string user, string pass, string table)
+        {
+            db_host = host;
+            db_user = user;
+            db_pass = pass;
+            db_schema = table;
         }
 
         private static Random RNG = new Random();

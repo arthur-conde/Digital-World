@@ -8,7 +8,7 @@ namespace Digital_World
 {
     public class PacketLogic
     {
-        public static void Process(Client client, byte[] buffer)
+        public static void Process(Client client, byte[] buffer, Settings Opt)
         {
             PacketReader packet = new PacketReader(buffer);
 
@@ -103,7 +103,7 @@ namespace Digital_World
                         {
                             Console.WriteLine(e);
                         }
-                        client.Send(new Packets.Lobby.ServerIP(Properties.Settings.Default.MapServer, Properties.Settings.Default.MapPort,
+                        client.Send(new Packets.Lobby.ServerIP(Opt.GameServer.IP.ToString(), Opt.GameServer.Port,
                             pLoc.Map, pLoc.MapName));
                         break;
                     }

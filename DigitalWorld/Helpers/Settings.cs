@@ -46,13 +46,22 @@ namespace Digital_World.Helpers
             {
                 get
                 {
-                    IPAddress[] List = Dns.GetHostEntry(Host).AddressList;
-                    foreach (IPAddress ip in List)
+                    IPAddress myIp = null;
+                    if (!IPAddress.TryParse(Host, out myIp))
                     {
-                        if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                            return ip;
+                        IPAddress[] List = Dns.GetHostEntry(Host).AddressList;
+                        foreach (IPAddress ip in List)
+                        {
+                            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                            {
+                                myIp = ip;
+                                break;
+                            }
+                        }
+                        if (myIp == null)
+                            myIp = List[0];
                     }
-                    return List[0];
+                    return myIp;
                 }
             }
         }
@@ -224,8 +233,52 @@ namespace Digital_World.Helpers
 
             public class SizeSetting
             {
-                private double[][] SizeRates;
+                [XmlAttribute("min")]
+                public int Min = 0;
+                [XmlAttribute("max")]
+                public int Max = 0;
+
+                public SizeSetting() { }
+
+                public SizeSetting(int i1, int i2)
+                {
+                    Min = i1;
+                    Max = i2;
+                }
+
+                public int Size(Random RNG)
+                {
+                        if (Min > Max)
+                            Min = Max - 1;
+                        if (Max < Min)
+                            Max = Min + 1;
+                        return RNG.Next(Min * 100, Max * 100);
+
+                }
             }
+
+            public class SizeSettingContainer
+            {
+                public SizeSetting Level3 = new SizeSetting(70, 100);
+                public SizeSetting Level4 = new SizeSetting(100, 130);
+                public SizeSetting Level5 = new SizeSetting(130, 160);
+                private Random RNG = new Random();
+
+                public SizeSettingContainer() { }
+
+                public int Size(int Level)
+                {
+                    if (Level == 3)
+                        return Level3.Size(RNG);
+                    if (Level == 4)
+                        return Level4.Size(RNG);
+                    if (Level == 5)
+                        return Level5.Size(RNG);
+                    return 65000;
+                }
+            }
+
+            public SizeSettingContainer SizeRanges = new SizeSettingContainer();
 
             public GameServerSettings()
             {
@@ -269,6 +322,7 @@ namespace Digital_World.Helpers
                 {
                     Settings = (Settings)xml.Deserialize(s);
                 }
+                SqlDB.SetInfo(Settings.Database.Host, Settings.Database.Username, Settings.Database.Password, Settings.Database.Schema);
             }
             else
                 Settings.Serialize("Settings.xml");

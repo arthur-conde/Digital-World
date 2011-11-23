@@ -21,13 +21,13 @@ namespace Digital_World
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class AuthMainWin : Window
     {
         SocketWrapper server;
         List<Client> clients = new List<Client>();
-        Settings sSettings;
+        Settings Opt;
 
-        public MainWindow()
+        public AuthMainWin()
         {
             InitializeComponent();
 
@@ -38,10 +38,10 @@ namespace Digital_World
 
             Logger _writer = new Logger(tLog);
 
-            sSettings = Settings.Deserialize("Settings.xml");
-            if (sSettings.AuthServer.AutoStart)
+            Opt = Settings.Deserialize();
+            if (Opt.AuthServer.AutoStart)
             {
-                ServerInfo info = new ServerInfo(sSettings.AuthServer.Port, sSettings.AuthServer.IP);
+                ServerInfo info = new ServerInfo(Opt.AuthServer.Port, Opt.AuthServer.IP);
                 server.Listen(info);
             }
         }
@@ -71,8 +71,8 @@ namespace Digital_World
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
             if (server.Running) return;
-            ServerInfo info = new ServerInfo(Properties.Settings.Default.Port,
-                 System.Net.IPAddress.Parse(Properties.Settings.Default.Host));
+            ServerInfo info = new ServerInfo(Opt.AuthServer.Port,
+                 Opt.AuthServer.IP);
             server.Listen(info);
         }
 
@@ -91,7 +91,7 @@ namespace Digital_World
         {
             Options winOpt = new Options();
             if (winOpt.ShowDialog().Value)
-                sSettings = Settings.Deserialize("Settings.xml");
+                Opt = Settings.Deserialize();
         }
     }
 }

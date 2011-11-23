@@ -130,8 +130,8 @@ namespace Digital_World.Systems
                 case "rld":
                 case "reload":
                     {
-                        ActiveMap.Leave(client); 
-                        client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port,
+                        ActiveMap.Leave(client);
+                        client.Send(new MapChange(Opt.GameServer.IP.ToString(), Opt.GameServer.Port,
                             Tamer.Location.Map, Tamer.Location.PosX, Tamer.Location.PosY, Tamer.Location.MapName));
                         break;
                     }
@@ -154,7 +154,7 @@ namespace Digital_World.Systems
                         MapData Map = MapDB.GetMap(mapId);
                         Tamer.Location = new Position(mapId, X, Y);
                         SqlDB.SaveTamerPosition(client);
-                        client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port, mapId, X, Y, Map.Name));
+                        client.Send(new MapChange(Opt.GameServer.IP.ToString(), Opt.GameServer.Port, mapId, X, Y, Map.Name));
                         break;
                     };
                 case "tele":
@@ -173,7 +173,7 @@ namespace Digital_World.Systems
 
                             ActiveMap.Leave(client); 
                             Tamer.Location = p;
-                            client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port, p.Map, p.PosX, p.PosY, p.MapName));
+                            client.Send(new MapChange(Opt.GameServer.IP.ToString(), Opt.GameServer.Port, p.Map, p.PosX, p.PosY, p.MapName));
                         }
                         break;
                     }

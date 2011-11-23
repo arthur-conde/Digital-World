@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Digital_World
 {
-     public class Logger : TextWriter
+    public class Logger : TextWriter
     {
         private TextBox m_output;
         public Logger(TextBox textbox)

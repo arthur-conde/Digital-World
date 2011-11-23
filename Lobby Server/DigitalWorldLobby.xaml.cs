@@ -21,13 +21,13 @@ namespace Digital_World
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class LobbyMainWin : Window
     {
         private SocketWrapper server = null;
         private ObservableCollection<Client> clients = new ObservableCollection<Client>();
         private Settings Opt = null;
 
-        public MainWindow()
+        public LobbyMainWin()
         {
             InitializeComponent();
             
@@ -57,7 +57,7 @@ namespace Digital_World
         {
             int type = BitConverter.ToInt16(buffer, 2);
 
-            PacketLogic.Process(client, buffer);
+            PacketLogic.Process(client, buffer, Opt);
         }
 
         void server_OnClose(Client client)
@@ -88,8 +88,7 @@ namespace Digital_World
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
             if (server.Running) return;
-            server.Listen(new ServerInfo(Properties.Settings.Default.Port, 
-                System.Net.IPAddress.Parse(Properties.Settings.Default.Host)));
+            server.Listen(new ServerInfo(Opt.LobbyServer.Port, Opt.LobbyServer.IP));
             sbInfo1.Content = "Starting Lobby Server...";
         }
 

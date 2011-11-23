@@ -238,7 +238,8 @@ namespace Digital_World.Systems
                         TDBTactic egg = TacticsDB.Get(Tamer.Incubator);
                         if (egg != null)
                         {
-                            uint digiId = SqlDB.CreateMercenary(Tamer.CharacterId, name, egg.Species, Tamer.IncubatorLevel, 15000, 0);
+                            uint digiId = SqlDB.CreateMercenary(Tamer.CharacterId, name, egg.Species, Tamer.IncubatorLevel,
+                                Opt.GameServer.SizeRanges.Size(Tamer.IncubatorLevel), 0);
                             if (digiId == 0) return;
                             Digimon mon = SqlDB.GetDigimon(digiId);
                             for (int i = 0; i < Tamer.DigimonList.Length; i++)
@@ -250,7 +251,7 @@ namespace Digital_World.Systems
                                     break;
                                 }
                             }
-                            Send(new BroadcastHatch(Tamer.Name, name, egg.Species, 15000, Tamer.IncubatorLevel));
+                            Send(new BroadcastHatch(Tamer.Name, name, egg.Species, mon.Size, Tamer.IncubatorLevel));
                             Tamer.IncubatorLevel = 0;
                             Tamer.Incubator = 0;
                         }
@@ -325,7 +326,7 @@ namespace Digital_World.Systems
                         MakeHandles(client.Tamer, (uint)client.time_t);
 
                         Packet p = new Packets.Game.CharInfo(client.Tamer);
-                        File.WriteAllBytes("W:\\My.packet", p.ToArray());
+                        //File.WriteAllBytes("W:\\My.packet", p.ToArray());
                         //Console.WriteLine(Packet.Visualize(buffer));
 
                         //byte[] buffer = File.ReadAllBytes("W:\\CharInfo.packet");
@@ -346,7 +347,7 @@ namespace Digital_World.Systems
                         Tamer.Location = new Position(Portal);
 
                         SqlDB.SaveTamer(client);
-                        client.Send(new MapChange(Properties.Settings.Default.Host, Properties.Settings.Default.Port, Portal, Map.Name));
+                        client.Send(new MapChange(Opt.GameServer.IP.ToString(), Opt.GameServer.Port, Portal, Map.Name));
                         client.Send(new SendHandle(Tamer.TamerHandle));
                         break;
                     }
